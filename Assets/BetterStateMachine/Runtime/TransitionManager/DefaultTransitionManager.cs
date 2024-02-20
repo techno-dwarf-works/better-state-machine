@@ -67,12 +67,28 @@ namespace Better.StateMachine.Runtime.TransitionManager
             return this;
         }
 
+        public DefaultTransitionManager<TState> AddTransition<TFrom, TTo>(Func<bool> predicate)
+            where TFrom : TState, new()
+            where TTo : TState, new()
+        {
+            TFrom fromState = new();
+            TFrom toState = new();
+            return AddTransition(fromState, toState, predicate);
+        }
+
         public DefaultTransitionManager<TState> AddTransition(TState to, Func<bool> predicate)
         {
             var transition = new AnyToTransition<TState>(to, predicate);
             _anyToTransitions.Add(transition);
 
             return this;
+        }
+
+        public DefaultTransitionManager<TState> AddTransition<T>(Func<bool> predicate)
+            where T : TState, new()
+        {
+            T state = new();
+            return AddTransition(state, predicate);
         }
     }
 }
