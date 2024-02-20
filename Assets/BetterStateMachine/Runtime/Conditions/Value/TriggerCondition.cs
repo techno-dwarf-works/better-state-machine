@@ -26,7 +26,7 @@ namespace Better.StateMachine.Runtime.Conditions
 
     public class TriggerCondition : TriggerCondition<bool>
     {
-        protected TriggerCondition() : base(true, false)
+        public TriggerCondition() : base(true, false)
         {
         }
 
