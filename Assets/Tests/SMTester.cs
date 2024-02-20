@@ -16,17 +16,7 @@ public class SMTester : MonoBehaviour
     private TriggerCondition _cTrigger;
 
     private void Awake()
-    {
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        // TODO: null trans state possible, need warning/error
-        
+    {   
         _aState = new();
         _bState = new();
         _cState = new();
