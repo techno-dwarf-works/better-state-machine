@@ -13,12 +13,12 @@ namespace Better.StateMachine.Runtime
     [Serializable]
     public class StateMachine<TState> : StateMachine<TState, DefaultTransitionManager<TState>, DefaultSequence<TState>> where TState : BaseState
     {
-        public StateMachine(DefaultTransitionManager<TState> transitionManager, DefaultSequence<TState> transitionSequence, float tickTimestep = DefaultTickTimestep) 
+        public StateMachine(DefaultTransitionManager<TState> transitionManager, DefaultSequence<TState> transitionSequence, float tickTimestep = DefaultTickTimestep)
             : base(transitionManager, transitionSequence, tickTimestep)
         {
         }
 
-        public StateMachine(float tickTimestep = DefaultTickTimestep) 
+        public StateMachine(float tickTimestep = DefaultTickTimestep)
             : this(new DefaultTransitionManager<TState>(), new DefaultSequence<TState>(), tickTimestep)
         {
         }
@@ -40,10 +40,10 @@ namespace Better.StateMachine.Runtime
         protected readonly TTransitionSequence _transitionSequence;
         protected TaskCompletionSource<bool> _stateChangeCompletionSource;
 
-        public Task TransitionTask => _stateChangeCompletionSource?.Task ?? Task.CompletedTask;
+        public bool InTransition => _stateChangeCompletionSource != null;
+        public Task TransitionTask => InTransition ? _stateChangeCompletionSource.Task : Task.CompletedTask;
 
         public TTransitionManager TransitionManager => _transitionManager;
-
         public TTransitionSequence TransitionSequence => _transitionSequence;
 
         public bool IsRunning { get; protected set; }
@@ -95,10 +95,7 @@ namespace Better.StateMachine.Runtime
             }
 
             _transitionTokenSource?.Cancel();
-            if (_stateChangeCompletionSource != null)
-            {
-                await _stateChangeCompletionSource.Task;
-            }
+            await TransitionTask;
 
             _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
@@ -115,11 +112,8 @@ namespace Better.StateMachine.Runtime
         {
             do
             {
-                if (_stateChangeCompletionSource != null)
-                {
-                    await _stateChangeCompletionSource.Task;
-                }
-
+                await TransitionTask;
+             
                 if (_transitionManager.TryFindTransition(CurrentState, out var nextState))
                 {
                     await ChangeStateAsync(nextState, cancellationToken);
