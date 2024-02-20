@@ -2,7 +2,7 @@
 
 namespace Better.StateMachine.Runtime.Conditions
 {
-    public abstract class TriggerCondition<TValue> : ValueCondition<TValue>
+    public class TriggerCondition<TValue> : ValueCondition<TValue>
     {
         private TValue _defaultValue;
 
@@ -21,6 +21,23 @@ namespace Better.StateMachine.Runtime.Conditions
         {
             base.Recondition();
             Value = _defaultValue;
+        }
+    }
+
+    public class TriggerCondition : TriggerCondition<bool>
+    {
+        protected TriggerCondition() : base(true, false)
+        {
+        }
+
+        public void Trigger()
+        {
+            Value = true;
+        }
+
+        public void ResetTrigger()
+        {
+            Value = false;
         }
     }
 }
