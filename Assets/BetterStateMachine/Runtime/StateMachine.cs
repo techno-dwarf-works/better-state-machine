@@ -54,7 +54,7 @@ namespace Better.StateMachine.Runtime
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
             _transitionManager.Setup();
-            
+
             TickAsync(_runningTokenSource.Token).Forget();
         }
 
@@ -80,6 +80,12 @@ namespace Better.StateMachine.Runtime
             if (!IsRunning)
             {
                 Debug.LogError($"[{MachineName}] {nameof(ChangeStateAsync)}: machine is not running");
+                return;
+            }
+
+            if (newState == null)
+            {
+                Debug.LogError($"[{MachineName}] {nameof(ChangeStateAsync)}: {nameof(newState)} cannot be null");
                 return;
             }
 

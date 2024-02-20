@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Better.StateMachine.Runtime.Conditions;
 using Better.StateMachine.Runtime.States;
 using Better.StateMachine.Runtime.Transitions;
+using UnityEngine;
 
 namespace Better.StateMachine.Runtime.TransitionManager
 {
@@ -64,6 +65,11 @@ namespace Better.StateMachine.Runtime.TransitionManager
 
         public DefaultTransitionManager<TState> AddTransition(TState from, TState to, ICondition condition)
         {
+            if (!ValidateNullReference(from) || !ValidateNullReference(to))
+            {
+                return this;
+            }
+
             var transition = new FromToTransition<TState>(from, to, condition);
             var key = transition.From;
 
@@ -103,6 +109,11 @@ namespace Better.StateMachine.Runtime.TransitionManager
 
         public DefaultTransitionManager<TState> AddTransition(TState to, ICondition condition)
         {
+            if (!ValidateNullReference(to))
+            {
+                return this;
+            }
+
             var transition = new AnyToTransition<TState>(to, condition);
             _anyToTransitions.Add(transition);
 
@@ -130,13 +141,25 @@ namespace Better.StateMachine.Runtime.TransitionManager
         }
 
         #endregion
-        
+
         private void ReconditionTransitions()
         {
             foreach (var transition in _currentTransitions)
             {
                 transition.Recondition();
             }
+        }
+
+        private static bool ValidateNullReference(TState state, bool logWarning = true)
+        {
+            var isNull = state == null;
+            if (isNull && logWarning)
+            {
+                var message = $"[{nameof(DefaultTransitionManager<TState>)}] {nameof(ValidateNullReference)}: {nameof(state)} cannot be null";
+                Debug.LogWarning(message);
+            }
+
+            return !isNull;
         }
     }
 }
