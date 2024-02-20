@@ -75,6 +75,12 @@ namespace Better.StateMachine.Runtime.TransitionManager
             return this;
         }
 
+        public DefaultTransitionManager<TState> AddTransition(TState from, TState to, Func<bool> predicate)
+        {
+            var condition = new FuncCondition(predicate);
+            return AddTransition(from, to, condition);
+        }
+
         public DefaultTransitionManager<TState> AddTransition<TFrom, TTo>(ICondition condition)
             where TFrom : TState, new()
             where TTo : TState, new()
@@ -82,6 +88,14 @@ namespace Better.StateMachine.Runtime.TransitionManager
             TFrom fromState = new();
             TTo toState = new();
             return AddTransition(fromState, toState, condition);
+        }
+
+        public DefaultTransitionManager<TState> AddTransition<TFrom, TTo>(Func<bool> predicate)
+            where TFrom : TState, new()
+            where TTo : TState, new()
+        {
+            var condition = new FuncCondition(predicate);
+            return AddTransition<TFrom, TTo>(condition);
         }
 
         public DefaultTransitionManager<TState> AddTransition(TState to, ICondition condition)
@@ -92,11 +106,24 @@ namespace Better.StateMachine.Runtime.TransitionManager
             return this;
         }
 
-        public DefaultTransitionManager<TState> AddTransition<T>(ICondition condition)
-            where T : TState, new()
+        public DefaultTransitionManager<TState> AddTransition(TState to, Func<bool> predicate)
         {
-            T state = new();
+            var condition = new FuncCondition(predicate);
+            return AddTransition(to, condition);
+        }
+
+        public DefaultTransitionManager<TState> AddTransition<TTo>(ICondition condition)
+            where TTo : TState, new()
+        {
+            TTo state = new();
             return AddTransition(state, condition);
+        }
+
+        public DefaultTransitionManager<TState> AddTransition<TTo>(Func<bool> predicate)
+            where TTo : TState, new()
+        {
+            var condition = new FuncCondition(predicate);
+            return AddTransition<TTo>(condition);
         }
 
         #endregion
