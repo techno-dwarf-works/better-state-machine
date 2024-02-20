@@ -22,6 +22,12 @@ namespace Better.StateMachine.Runtime.TransitionManager
 
         #region ITransitionManager
 
+        void ITransitionManager<TState>.Setup()
+        {
+            _currentTransitions = _anyToTransitions;
+            ReconditionTransitions();
+        }
+
         bool ITransitionManager<TState>.TryFindTransition(TState currentState, out TState nextState)
         {
             foreach (var transition in _currentTransitions)
@@ -49,10 +55,7 @@ namespace Better.StateMachine.Runtime.TransitionManager
                 _currentTransitions = _anyToTransitions;
             }
 
-            foreach (var transition in _currentTransitions)
-            {
-                transition.Recondition();
-            }
+            ReconditionTransitions();
         }
 
         #endregion
@@ -127,5 +130,13 @@ namespace Better.StateMachine.Runtime.TransitionManager
         }
 
         #endregion
+        
+        private void ReconditionTransitions()
+        {
+            foreach (var transition in _currentTransitions)
+            {
+                transition.Recondition();
+            }
+        }
     }
 }

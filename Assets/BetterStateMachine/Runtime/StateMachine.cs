@@ -53,6 +53,8 @@ namespace Better.StateMachine.Runtime
 
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
+            _transitionManager.Setup();
+            
             TickAsync(_runningTokenSource.Token).Forget();
         }
 
@@ -109,7 +111,7 @@ namespace Better.StateMachine.Runtime
                 {
                     await TaskExtensions.WaitForSeconds(_tickTimestep, cancellationToken: cancellationToken);
                 }
-            } while (cancellationToken.IsCancellationRequested);
+            } while (!cancellationToken.IsCancellationRequested);
         }
     }
 
