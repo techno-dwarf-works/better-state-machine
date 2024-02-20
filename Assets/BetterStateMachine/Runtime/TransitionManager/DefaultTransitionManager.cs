@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Better.StateMachine.Runtime.Conditions;
 using Better.StateMachine.Runtime.States;
 using Better.StateMachine.Runtime.Transitions;
 
@@ -47,13 +48,20 @@ namespace Better.StateMachine.Runtime.TransitionManager
             {
                 _currentTransitions = _anyToTransitions;
             }
+
+            foreach (var transition in _currentTransitions)
+            {
+                transition.Recondition();
+            }
         }
 
         #endregion
 
-        public DefaultTransitionManager<TState> AddTransition(TState from, TState to, Func<bool> predicate)
+        #region Transitions
+
+        public DefaultTransitionManager<TState> AddTransition(TState from, TState to, ICondition condition)
         {
-            var transition = new FromToTransition<TState>(from, to, predicate);
+            var transition = new FromToTransition<TState>(from, to, condition);
             var key = transition.From;
 
             if (!_outfromingTransitions.ContainsKey(key))
@@ -67,28 +75,30 @@ namespace Better.StateMachine.Runtime.TransitionManager
             return this;
         }
 
-        public DefaultTransitionManager<TState> AddTransition<TFrom, TTo>(Func<bool> predicate)
+        public DefaultTransitionManager<TState> AddTransition<TFrom, TTo>(ICondition condition)
             where TFrom : TState, new()
             where TTo : TState, new()
         {
             TFrom fromState = new();
-            TFrom toState = new();
-            return AddTransition(fromState, toState, predicate);
+            TTo toState = new();
+            return AddTransition(fromState, toState, condition);
         }
 
-        public DefaultTransitionManager<TState> AddTransition(TState to, Func<bool> predicate)
+        public DefaultTransitionManager<TState> AddTransition(TState to, ICondition condition)
         {
-            var transition = new AnyToTransition<TState>(to, predicate);
+            var transition = new AnyToTransition<TState>(to, condition);
             _anyToTransitions.Add(transition);
 
             return this;
         }
 
-        public DefaultTransitionManager<TState> AddTransition<T>(Func<bool> predicate)
+        public DefaultTransitionManager<TState> AddTransition<T>(ICondition condition)
             where T : TState, new()
         {
             T state = new();
-            return AddTransition(state, predicate);
+            return AddTransition(state, condition);
         }
+
+        #endregion
     }
 }

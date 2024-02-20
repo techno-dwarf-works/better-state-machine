@@ -11,21 +11,8 @@ using TaskExtensions = Better.Extensions.Runtime.TasksExtension.TaskExtensions;
 namespace Better.StateMachine.Runtime
 {
     [Serializable]
-    public class StateMachine<TState> : StateMachine<TState, DefaultTransitionManager<TState>, DefaultSequence<TState>> where TState : BaseState
-    {
-        public StateMachine(DefaultTransitionManager<TState> transitionManager, DefaultSequence<TState> transitionSequence, float tickTimestep = DefaultTickTimestep)
-            : base(transitionManager, transitionSequence, tickTimestep)
-        {
-        }
-
-        public StateMachine(float tickTimestep = DefaultTickTimestep)
-            : this(new DefaultTransitionManager<TState>(), new DefaultSequence<TState>(), tickTimestep)
-        {
-        }
-    }
-
-    [Serializable]
-    public class StateMachine<TState, TTransitionManager, TTransitionSequence> where TState : BaseState
+    public class StateMachine<TState, TTransitionManager, TTransitionSequence>
+        where TState : BaseState
         where TTransitionManager : ITransitionManager<TState>, new()
         where TTransitionSequence : ITransitionSequence<TState>, new()
     {
@@ -113,7 +100,7 @@ namespace Better.StateMachine.Runtime
             do
             {
                 await TransitionTask;
-             
+
                 if (_transitionManager.TryFindTransition(CurrentState, out var nextState))
                 {
                     await ChangeStateAsync(nextState, cancellationToken);
@@ -123,6 +110,21 @@ namespace Better.StateMachine.Runtime
                     await TaskExtensions.WaitForSeconds(_tickTimestep, cancellationToken: cancellationToken);
                 }
             } while (cancellationToken.IsCancellationRequested);
+        }
+    }
+
+    [Serializable]
+    public class StateMachine<TState> : StateMachine<TState, DefaultTransitionManager<TState>, DefaultSequence<TState>>
+        where TState : BaseState
+    {
+        public StateMachine(DefaultTransitionManager<TState> transitionManager, DefaultSequence<TState> transitionSequence, float tickTimestep = DefaultTickTimestep)
+            : base(transitionManager, transitionSequence, tickTimestep)
+        {
+        }
+
+        public StateMachine(float tickTimestep = DefaultTickTimestep)
+            : this(new DefaultTransitionManager<TState>(), new DefaultSequence<TState>(), tickTimestep)
+        {
         }
     }
 }
