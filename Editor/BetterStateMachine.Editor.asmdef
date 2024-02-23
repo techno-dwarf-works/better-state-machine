@@ -1,0 +1,18 @@
+{
+    "name": "BetterStateMachine.Editor",
+    "rootNamespace": "Better.StateMachine",
+    "references": [
+        "GUID:6aa9a0eb521fa7049b6a8c1f8803c297"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
