@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Better.StateMachine.Runtime.Conditions
 {
@@ -8,6 +9,11 @@ namespace Better.StateMachine.Runtime.Conditions
 
         public ComplexCondition(IEnumerable<ICondition> conditions) : base()
         {
+            if (conditions == null)
+            {
+                throw new ArgumentNullException(nameof(conditions));
+            }
+
             Conditions = conditions;
         }
 

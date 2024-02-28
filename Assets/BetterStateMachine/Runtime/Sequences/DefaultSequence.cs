@@ -13,13 +13,13 @@ namespace Better.StateMachine.Runtime.Sequences
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                Debug.LogWarning($"[{nameof(DefaultSequence<TState>)}] {nameof(ITransitionSequence<TState>.ChangingStateAsync)}: was canceled before the start");
+                Debug.LogWarning("Was canceled before the start");
                 return default;
             }
 
             if (newState == currentState)
             {
-                Debug.LogWarning($"[{nameof(DefaultSequence<TState>)}] {nameof(ITransitionSequence<TState>.ChangingStateAsync)}: {nameof(newState)} equaled {nameof(currentState)}, operation was cancelled");
+                Debug.LogWarning($"{nameof(newState)} equaled {nameof(currentState)}, operation was cancelled");
                 return currentState;
             }
 

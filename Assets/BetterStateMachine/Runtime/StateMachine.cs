@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Better.Extensions.Runtime.TasksExtension;
+using Better.Extensions.Runtime;
 using Better.StateMachine.Runtime.Sequences;
 using Better.StateMachine.Runtime.States;
 using Better.StateMachine.Runtime.TransitionManager;
 using UnityEngine;
-using TaskExtensions = Better.Extensions.Runtime.TasksExtension.TaskExtensions;
 
 namespace Better.StateMachine.Runtime
 {
@@ -38,16 +37,26 @@ namespace Better.StateMachine.Runtime
 
         public StateMachine(TTransitionManager transitionManager, TTransitionSequence transitionSequence, float tickTimestep = DefaultTickTimestep)
         {
+            if (transitionManager == null)
+            {
+                throw new ArgumentNullException(nameof(transitionManager));
+            }
+
+            if (transitionSequence == null)
+            {
+                throw new ArgumentNullException(nameof(transitionSequence));
+            }
+
             _transitionManager = transitionManager;
             _transitionSequence = transitionSequence;
-            _tickTimestep = tickTimestep;
+            _tickTimestep = Mathf.Max(tickTimestep, 0f);
         }
 
         public void Run()
         {
             if (IsRunning)
             {
-                Debug.LogError($"[{MachineName}] {nameof(Run)}: already running");
+                DebugUtility.LogException<InvalidOperationException>("Already running");
                 return;
             }
 
@@ -62,7 +71,7 @@ namespace Better.StateMachine.Runtime
         {
             if (!IsRunning)
             {
-                Debug.LogError($"[{MachineName}] {nameof(Stop)}: already stopped");
+                DebugUtility.LogException<InvalidOperationException>("Already stopped");
                 return;
             }
 
@@ -79,13 +88,13 @@ namespace Better.StateMachine.Runtime
         {
             if (!IsRunning)
             {
-                Debug.LogError($"[{MachineName}] {nameof(ChangeStateAsync)}: machine is not running");
+                DebugUtility.LogException<InvalidOperationException>("Machine is not running");
                 return;
             }
 
             if (newState == null)
             {
-                Debug.LogError($"[{MachineName}] {nameof(ChangeStateAsync)}: {nameof(newState)} cannot be null");
+                DebugUtility.LogException<ArgumentNullException>(nameof(newState));
                 return;
             }
 
@@ -115,7 +124,7 @@ namespace Better.StateMachine.Runtime
                 }
                 else
                 {
-                    await TaskExtensions.WaitForSeconds(_tickTimestep, cancellationToken: cancellationToken);
+                    await TaskUtility.WaitForSeconds(_tickTimestep, cancellationToken: cancellationToken);
                 }
             } while (!cancellationToken.IsCancellationRequested);
         }

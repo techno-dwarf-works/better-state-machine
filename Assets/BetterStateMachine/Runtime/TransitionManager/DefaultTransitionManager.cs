@@ -155,7 +155,7 @@ namespace Better.StateMachine.Runtime.TransitionManager
             var isNull = state == null;
             if (isNull && logWarning)
             {
-                var message = $"[{nameof(DefaultTransitionManager<TState>)}] {nameof(ValidateNullReference)}: {nameof(state)} cannot be null";
+                var message = $"{nameof(state)} cannot be null";
                 Debug.LogWarning(message);
             }
 
