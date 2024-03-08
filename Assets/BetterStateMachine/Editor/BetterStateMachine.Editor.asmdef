@@ -1,6 +1,6 @@
 {
     "name": "BetterStateMachine.Editor",
-    "rootNamespace": "Better.StateMachine",
+    "rootNamespace": "Better.StateMachine.EditorAddons",
     "references": [
         "GUID:6aa9a0eb521fa7049b6a8c1f8803c297"
     ],
