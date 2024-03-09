@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Better.StateMachine.Runtime.Conditions
 {
@@ -12,6 +13,11 @@ namespace Better.StateMachine.Runtime.Conditions
         public ValueCondition(IEqualityComparer<TValue> equalityComparer, TValue targetValue, TValue value = default)
             : base()
         {
+            if (equalityComparer == null)
+            {
+                throw new ArgumentNullException(nameof(equalityComparer));
+            }
+            
             _equalityComparer = equalityComparer;
             TargetValue = targetValue;
             Value = value;
