@@ -1,20 +1,21 @@
 {
   "name": "com.tdw.better.statemachine",
   "displayName": "Better StateMachine",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "unity": "2021.3",
   "description": " ",
   "dependencies": {
-    "com.uurha.betterextensions": "1.2.0"
+    "com.tdw.better.internal.core": "0.0.2",
+    "com.uurha.betterextensions": "1.5.96"
   },
   "author": {
     "name": "Better Plugins",
     "url": "https://github.com/techno-dwarf-works"
   },
-  "changelogUrl": "https://github.com/techno-dwarf-works/{project_name}",
-  "documentationUrl": "https://github.com/techno-dwarf-works/{project_name}/tree/main#readme",
+  "changelogUrl": "https://github.com/techno-dwarf-works/better-state-machine",
+  "documentationUrl": "https://github.com/techno-dwarf-works/better-state-machine/tree/main#readme",
   "license": "MIT",
-  "licensesUrl":"https://github.com/techno-dwarf-works/{project_name}/blob/main/LICENSE",
+  "licensesUrl":"https://github.com/techno-dwarf-works/better-state-machine/blob/main/LICENSE",
   "keywords": [
     "state",
     "state machine",
