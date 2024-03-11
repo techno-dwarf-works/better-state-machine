@@ -3,7 +3,8 @@ using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Transitions
 {
-    public abstract class Transition<TState> where TState : BaseState
+    public abstract class Transition<TState>
+        where TState : BaseState
     {
         private readonly ICondition _condition;
         public TState To { get; }

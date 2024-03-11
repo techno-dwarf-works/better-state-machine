@@ -7,19 +7,19 @@ using UnityEngine;
 namespace Better.StateMachine.Runtime.Sequences
 {
     [Serializable]
-    public class DefaultSequence<TState> : ITransitionSequence<TState> where TState : BaseState
+    public class DefaultSequence<TState> : ISequence<TState> where TState : BaseState
     {
-        async Task<TState> ITransitionSequence<TState>.ChangingStateAsync(TState currentState, TState newState, CancellationToken cancellationToken)
+        async Task<TState> ISequence<TState>.ChangingStateAsync(TState currentState, TState newState, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                Debug.LogWarning($"[{nameof(DefaultSequence<TState>)}] {nameof(ITransitionSequence<TState>.ChangingStateAsync)}: was canceled before the start");
+                Debug.LogWarning("Was canceled before the start");
                 return default;
             }
 
             if (newState == currentState)
             {
-                Debug.LogWarning($"[{nameof(DefaultSequence<TState>)}] {nameof(ITransitionSequence<TState>.ChangingStateAsync)}: {nameof(newState)} equaled {nameof(currentState)}, operation was cancelled");
+                Debug.LogWarning($"{nameof(newState)} equaled {nameof(currentState)}, operation was cancelled");
                 return currentState;
             }
 

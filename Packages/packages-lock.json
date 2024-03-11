@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.tdw.better.internal.core": {
+      "version": "0.0.2",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.unity.collab-proxy": {
       "version": "2.0.1",
       "depth": 0,
@@ -136,10 +143,12 @@
       "url": "https://packages.unity.com"
     },
     "com.uurha.betterextensions": {
-      "version": "1.2.0",
+      "version": "1.5.96",
       "depth": 0,
       "source": "registry",
-      "dependencies": {},
+      "dependencies": {
+        "com.tdw.better.internal.core": "0.0.2"
+      },
       "url": "https://package.openupm.com"
     },
     "com.unity.modules.ai": {
