@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Better.Extensions.Runtime;
+using Better.StateMachine.Runtime.Modules;
 using Better.StateMachine.Runtime.Sequences;
 using Better.StateMachine.Runtime.States;
-using Better.StateMachine.Runtime.Transitions;
 
 namespace Better.StateMachine.Runtime
 {
@@ -14,10 +15,11 @@ namespace Better.StateMachine.Runtime
     {
         public event Action<TState> StateChanged;
 
-        protected CancellationTokenSource _runningTokenSource;
-        protected CancellationTokenSource _transitionTokenSource;
-        protected readonly TTransitionSequence _transitionSequence;
-        protected TaskCompletionSource<bool> _stateChangeCompletionSource;
+        private CancellationTokenSource _runningTokenSource;
+        private CancellationTokenSource _transitionTokenSource;
+        private readonly TTransitionSequence _transitionSequence;
+        private TaskCompletionSource<bool> _stateChangeCompletionSource;
+        private HashSet<Module<TState>> _modules;
 
         public bool IsRunning { get; protected set; }
         public bool InTransition => _stateChangeCompletionSource != null;
@@ -32,6 +34,7 @@ namespace Better.StateMachine.Runtime
             }
 
             _transitionSequence = transitionSequence;
+            _modules = new();
         }
 
         public StateMachine() : this(new())
@@ -47,7 +50,30 @@ namespace Better.StateMachine.Runtime
 
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
+
+            foreach (var module in _modules)
+            {
+                module.OnMachineRun(_runningTokenSource.Token);
+            }
         }
+
+        public virtual void Stop()
+        {
+            if (!ValidateRunning(true))
+            {
+                return;
+            }
+
+            IsRunning = false;
+            _runningTokenSource?.Cancel();
+
+            foreach (var module in _modules)
+            {
+                module.OnMachineStop();
+            }
+        }
+
+        #region States
 
         public async Task ChangeStateAsync(TState newState, CancellationToken cancellationToken)
         {
@@ -82,6 +108,11 @@ namespace Better.StateMachine.Runtime
 
         protected virtual void OnStateChanged(TState state)
         {
+            foreach (var module in _modules)
+            {
+                module.OnStateChanged(state);
+            }
+
             StateChanged?.Invoke(state);
         }
 
@@ -90,16 +121,62 @@ namespace Better.StateMachine.Runtime
             return CurrentState is T;
         }
 
-        public virtual void Stop()
+        #endregion
+
+        #region Modules
+
+        public void AddModule(Module<TState> module)
         {
-            if (!ValidateRunning(true))
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return;
+            }
+
+            if (HasModule(module))
+            {
+                var message = $"Module({module}) already added";
+                DebugUtility.LogException<ArgumentException>(message);
+                return;
+            }
+
+            if (!ValidateRunning(false))
             {
                 return;
             }
 
-            IsRunning = false;
-            _runningTokenSource?.Cancel();
+            module.Setup(this);
+            _modules.Add(module);
         }
+
+        public bool HasModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            return _modules.Contains(module);
+        }
+
+        public bool RemoveModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            if (!ValidateRunning(false))
+            {
+                return false;
+            }
+
+            return _modules.Remove(module);
+        }
+
+        #endregion
 
         private bool ValidateRunning(bool targetState, bool logException = true)
         {
@@ -112,55 +189,6 @@ namespace Better.StateMachine.Runtime
             }
 
             return isValid;
-        }
-    }
-
-    [Serializable]
-    public class StateMachine<TState, TTransitionHandler, TTransitionSequence> : StateMachine<TState, TTransitionSequence>
-        where TState : BaseState
-        where TTransitionHandler : ITransitionHandler<TState>, new()
-        where TTransitionSequence : ISequence<TState>, new()
-    {
-        protected readonly TTransitionHandler _transitionHandler;
-        public TTransitionHandler TransitionHandler => _transitionHandler;
-
-        public StateMachine(TTransitionHandler transitionHandler, TTransitionSequence transitionSequence)
-            : base(transitionSequence)
-        {
-            if (transitionHandler == null)
-            {
-                throw new ArgumentNullException(nameof(transitionHandler));
-            }
-
-            _transitionHandler = transitionHandler;
-            _transitionHandler.Setup(this);
-        }
-
-        public StateMachine(TTransitionHandler transitionHandler) : this(transitionHandler, new())
-        {
-        }
-
-        public StateMachine(TTransitionSequence transitionSequence) : this(new(), transitionSequence)
-        {
-        }
-
-        public StateMachine() : this(new(), new())
-        {
-        }
-
-        public override void Run()
-        {
-            base.Run();
-            if (!IsRunning) return;
-
-            _transitionHandler.Run(_runningTokenSource.Token);
-        }
-
-        protected override void OnStateChanged(TState state)
-        {
-            base.OnStateChanged(state);
-
-            _transitionHandler.OnChangedState(state);
         }
     }
 

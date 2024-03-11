@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Better.StateMachine.Runtime.States;
 
-namespace Better.StateMachine.Runtime.Transitions
+namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public class TransitionBundle<TState>
         where TState : BaseState
