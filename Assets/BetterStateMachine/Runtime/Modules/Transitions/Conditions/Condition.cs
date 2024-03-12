@@ -1,4 +1,4 @@
-﻿namespace Better.StateMachine.Runtime.Conditions
+﻿namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public abstract class Condition : ICondition
     {

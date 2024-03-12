@@ -7,9 +7,9 @@ using UnityEngine;
 namespace Better.StateMachine.Runtime.Sequences
 {
     [Serializable]
-    public class DefaultSequence<TState> : ITransitionSequence<TState> where TState : BaseState
+    public class DefaultSequence<TState> : ISequence<TState> where TState : BaseState
     {
-        async Task<TState> ITransitionSequence<TState>.ChangingStateAsync(TState currentState, TState newState, CancellationToken cancellationToken)
+        async Task<TState> ISequence<TState>.ChangingStateAsync(TState currentState, TState newState, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
