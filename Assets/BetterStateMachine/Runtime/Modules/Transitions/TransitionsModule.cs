@@ -20,26 +20,24 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             _currentBundles = new();
         }
 
-        public override void Setup(IStateMachine<TState> stateMachine)
+        protected override void OnSetup(IStateMachine<TState> stateMachine)
         {
-            base.Setup(stateMachine);
-
             _currentBundles.Clear();
             _currentBundles.Add(_anyToBundles);
         }
 
-        public override void OnMachineRun(CancellationToken runningToken)
+        protected override void OnMachineRun(CancellationToken runningToken)
         {
-            base.OnMachineRun(runningToken);
-
             ReconditionTransitions();
         }
 
-        public override void OnStateChanged(TState state)
+        protected override void OnStateChanged(TState state)
         {
-            base.OnStateChanged(state);
-
             UpdateTransitions(state);
+        }
+
+        protected override void OnMachineStop()
+        {
         }
 
         protected bool TryNextState()

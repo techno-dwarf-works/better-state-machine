@@ -17,7 +17,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             _tickTimestep = Mathf.Max(tickTimestep, 0f);
         }
 
-        public override void OnMachineRun(CancellationToken runningToken)
+        protected override void OnMachineRun(CancellationToken runningToken)
         {
             base.OnMachineRun(runningToken);
             if (runningToken.IsCancellationRequested) return;

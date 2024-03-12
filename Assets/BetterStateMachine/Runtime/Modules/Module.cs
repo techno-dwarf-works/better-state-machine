@@ -10,26 +10,36 @@ namespace Better.StateMachine.Runtime.Modules
     {
         protected IStateMachine<TState> StateMachine { get; private set; }
 
-        public virtual void Setup(IStateMachine<TState> stateMachine)
+        internal void SetupInternal(IStateMachine<TState> stateMachine)
         {
             StateMachine = stateMachine;
+            OnSetup(stateMachine);
         }
 
-        public virtual void OnMachineRun(CancellationToken runningToken)
+        internal void OnMachineRunInternal(CancellationToken runningToken)
         {
             if (runningToken.IsCancellationRequested)
             {
                 Debug.LogWarning("Was canceled before the start");
             }
+
+            OnMachineRun(runningToken);
         }
 
-        public virtual void OnStateChanged(TState state)
+        internal void OnStateChangedInternal(TState state)
         {
+            OnStateChanged(state);
         }
 
-        public virtual void OnMachineStop()
+        internal void OnMachineStopInternal()
         {
+            OnMachineStop();
         }
+
+        protected abstract void OnSetup(IStateMachine<TState> stateMachine);
+        protected abstract void OnMachineRun(CancellationToken runningToken);
+        protected abstract void OnStateChanged(TState state);
+        protected abstract void OnMachineStop();
 
         protected bool ValidateMachineRunning(bool targetState, bool logException = true)
         {

@@ -54,7 +54,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _modules)
             {
-                module.OnMachineRun(_runningTokenSource.Token);
+                module.OnMachineRunInternal(_runningTokenSource.Token);
             }
         }
 
@@ -70,7 +70,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _modules)
             {
-                module.OnMachineStop();
+                module.OnMachineStopInternal();
             }
         }
 
@@ -111,7 +111,7 @@ namespace Better.StateMachine.Runtime
         {
             foreach (var module in _modules)
             {
-                module.OnStateChanged(state);
+                module.OnStateChangedInternal(state);
             }
 
             StateChanged?.Invoke(state);
@@ -146,7 +146,7 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
-            module.Setup(this);
+            module.SetupInternal(this);
             _modules.Add(module);
         }
 
