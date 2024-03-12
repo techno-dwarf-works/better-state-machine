@@ -33,7 +33,8 @@ namespace Better.StateMachine.Runtime.Modules
 
         protected bool ValidateMachineRunning(bool targetState, bool logException = true)
         {
-            var isValid = StateMachine.IsRunning == targetState;
+            var isRunning = StateMachine?.IsRunning ?? false;
+            var isValid = isRunning == targetState;
             if (!isValid && logException)
             {
                 var reason = targetState ? "not running" : "is running";

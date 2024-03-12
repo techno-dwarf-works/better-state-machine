@@ -6,6 +6,7 @@ using Better.Extensions.Runtime;
 using Better.StateMachine.Runtime.Modules;
 using Better.StateMachine.Runtime.Sequences;
 using Better.StateMachine.Runtime.States;
+using UnityEngine;
 
 namespace Better.StateMachine.Runtime
 {
@@ -136,7 +137,7 @@ namespace Better.StateMachine.Runtime
             if (HasModule(module))
             {
                 var message = $"Module({module}) already added";
-                DebugUtility.LogException<ArgumentException>(message);
+                Debug.LogWarning(message);
                 return;
             }
 
