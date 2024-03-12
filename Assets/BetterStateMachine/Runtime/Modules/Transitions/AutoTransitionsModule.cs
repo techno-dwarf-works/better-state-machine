@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Better.StateMachine.Runtime.States;
 using Better.Extensions.Runtime;
@@ -7,7 +6,7 @@ using UnityEngine;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
 {
-    public abstract class AutoTransitionsModule<TState> : TransitionsModule<TState>
+    public class AutoTransitionsModule<TState> : TransitionsModule<TState>
         where TState : BaseState
     {
         public const float DefaultTickTimestep = 0.1f;
