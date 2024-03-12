@@ -1,10 +1,13 @@
 using Better.StateMachine.Runtime;
-using Better.StateMachine.Runtime.Conditions;
+using Better.StateMachine.Runtime.Modules.Transitions;
 using Tests.States;
+using TMPro;
 using UnityEngine;
 
 public class SMTester : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI _currentStateTMP;
+
     private StateMachine<BaseTestState> _stateMachine;
 
     private ATestState _aState;
@@ -16,20 +19,30 @@ public class SMTester : MonoBehaviour
     private TriggerCondition _cTrigger;
 
     private void Awake()
-    {   
+    {
         _aState = new();
         _bState = new();
         _cState = new();
-        
+
         _aTrigger = new();
         _bTrigger = new();
         _cTrigger = new();
 
+        var transitionsModule = new AutoTransitionsModule<BaseTestState>();
+        transitionsModule.AddTransition(_aState, _aTrigger);
+        transitionsModule.AddTransition(_bState, _bTrigger);
+        transitionsModule.AddTransition(_cState, _cTrigger);
+
         _stateMachine = new();
-        _stateMachine.TransitionManager.AddTransition(_aState, _aTrigger);
-        _stateMachine.TransitionManager.AddTransition(_bState, _bTrigger);
-        _stateMachine.TransitionManager.AddTransition(_cState, _cTrigger);
+        _stateMachine.AddModule(transitionsModule);
         _stateMachine.Run();
+
+        _stateMachine.StateChanged += OnStateChanges;
+    }
+
+    private void OnStateChanges(BaseTestState state)
+    {
+        _currentStateTMP.text = state.ToString();
     }
 
     public void TriggerA() => Trigger(_aTrigger, "A");

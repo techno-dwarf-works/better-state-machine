@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Better.Extensions.Runtime;
 using Better.StateMachine.Runtime.States;
 using UnityEngine;
 
@@ -7,16 +8,25 @@ namespace Tests.States
 {
     public class BaseTestState : BaseState
     {
-        public override Task EnterAsync(CancellationToken token)
+        public float Duration = 0f;
+        
+        public override async Task EnterAsync(CancellationToken token)
         {
-            Debug.Log($"{GetType().Name}: ENTER");
-            return Task.CompletedTask;
+            Debug.Log($"{GetType().Name}: ENTER...");
+            await TaskUtility.WaitForSeconds(Duration, token);
+            Debug.Log($"{GetType().Name}: ENTERed");
         }
 
-        public override Task ExitAsync(CancellationToken token)
+        public override async Task ExitAsync(CancellationToken token)
         {
-            Debug.Log($"{GetType().Name}: EXIT");
-            return Task.CompletedTask;
+            Debug.Log($"{GetType().Name}: EXIT...");
+            await TaskUtility.WaitForSeconds(Duration, token);
+            Debug.Log($"{GetType().Name}: EXITed");
+        }
+
+        public override string ToString()
+        {
+            return GetType().Name;
         }
     }
 }
