@@ -12,7 +12,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         public const float DefaultTickTimestep = 0.1f;
         private float _tickTimestep;
 
-        protected AutoTransitionsModule(float tickTimestep = DefaultTickTimestep)
+        public AutoTransitionsModule(float tickTimestep = DefaultTickTimestep) : base()
         {
             _tickTimestep = Mathf.Max(tickTimestep, 0f);
         }
@@ -21,7 +21,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         {
             base.OnMachineRun(runningToken);
             if (runningToken.IsCancellationRequested) return;
-
+            
             TickAsync(runningToken).Forget();
         }
 
