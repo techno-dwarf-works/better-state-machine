@@ -1,7 +1,6 @@
-﻿using Better.StateMachine.Runtime.Conditions;
-using Better.StateMachine.Runtime.States;
+﻿using Better.StateMachine.Runtime.States;
 
-namespace Better.StateMachine.Runtime.Transitions
+namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public class FromToTransition<TState> : Transition<TState> where TState : BaseState
     {

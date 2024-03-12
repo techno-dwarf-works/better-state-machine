@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Better.StateMachine.Runtime.Conditions
+namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public class ValueCondition<TValue> : Condition
     {

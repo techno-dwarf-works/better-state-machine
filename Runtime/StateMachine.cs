@@ -1,30 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Better.Extensions.Runtime;
+using Better.StateMachine.Runtime.Modules;
 using Better.StateMachine.Runtime.Sequences;
 using Better.StateMachine.Runtime.States;
-using Better.StateMachine.Runtime.TransitionManager;
 using UnityEngine;
 
 namespace Better.StateMachine.Runtime
 {
     [Serializable]
-    public class StateMachine<TState, TTransitionSequence>
-        where TState : BaseState
-        where TTransitionSequence : ITransitionSequence<TState>, new()
+    public class StateMachine<TState, TTransitionSequence> : IStateMachine<TState> where TState : BaseState
+        where TTransitionSequence : ISequence<TState>, new()
     {
         public event Action<TState> StateChanged;
 
-        protected CancellationTokenSource _runningTokenSource;
-        protected CancellationTokenSource _transitionTokenSource;
-        protected readonly TTransitionSequence _transitionSequence;
-        protected TaskCompletionSource<bool> _stateChangeCompletionSource;
-
-        public bool InTransition => _stateChangeCompletionSource != null;
-        public Task TransitionTask => InTransition ? _stateChangeCompletionSource.Task : Task.CompletedTask;
+        private CancellationTokenSource _runningTokenSource;
+        private CancellationTokenSource _transitionTokenSource;
+        private readonly TTransitionSequence _transitionSequence;
+        private TaskCompletionSource<bool> _stateChangeCompletionSource;
+        private HashSet<Module<TState>> _modules;
 
         public bool IsRunning { get; protected set; }
+        public bool InTransition => _stateChangeCompletionSource != null;
+        public Task TransitionTask => InTransition ? _stateChangeCompletionSource.Task : Task.CompletedTask;
         public TState CurrentState { get; protected set; }
 
         public StateMachine(TTransitionSequence transitionSequence)
@@ -35,6 +35,11 @@ namespace Better.StateMachine.Runtime
             }
 
             _transitionSequence = transitionSequence;
+            _modules = new();
+        }
+
+        public StateMachine() : this(new())
+        {
         }
 
         public virtual void Run()
@@ -46,6 +51,11 @@ namespace Better.StateMachine.Runtime
 
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
+
+            foreach (var module in _modules)
+            {
+                module.OnMachineRunInternal(_runningTokenSource.Token);
+            }
         }
 
         public virtual void Stop()
@@ -57,7 +67,14 @@ namespace Better.StateMachine.Runtime
 
             IsRunning = false;
             _runningTokenSource?.Cancel();
+
+            foreach (var module in _modules)
+            {
+                module.OnMachineStopInternal();
+            }
         }
+
+        #region States
 
         public async Task ChangeStateAsync(TState newState, CancellationToken cancellationToken)
         {
@@ -75,7 +92,7 @@ namespace Better.StateMachine.Runtime
             _transitionTokenSource?.Cancel();
             await TransitionTask;
 
-            _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_runningTokenSource.Token, cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
 
             CurrentState = await _transitionSequence.ChangingStateAsync(CurrentState, newState, _transitionTokenSource.Token);
@@ -92,8 +109,75 @@ namespace Better.StateMachine.Runtime
 
         protected virtual void OnStateChanged(TState state)
         {
+            foreach (var module in _modules)
+            {
+                module.OnStateChangedInternal(state);
+            }
+
             StateChanged?.Invoke(state);
         }
+
+        public bool InState<T>() where T : TState
+        {
+            return CurrentState is T;
+        }
+
+        #endregion
+
+        #region Modules
+
+        public void AddModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return;
+            }
+
+            if (HasModule(module))
+            {
+                var message = $"Module({module}) already added";
+                Debug.LogWarning(message);
+                return;
+            }
+
+            if (!ValidateRunning(false))
+            {
+                return;
+            }
+
+            module.SetupInternal(this);
+            _modules.Add(module);
+        }
+
+        public bool HasModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            return _modules.Contains(module);
+        }
+
+        public bool RemoveModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            if (!ValidateRunning(false))
+            {
+                return false;
+            }
+
+            return _modules.Remove(module);
+        }
+
+        #endregion
 
         private bool ValidateRunning(bool targetState, bool logException = true)
         {
@@ -106,62 +190,6 @@ namespace Better.StateMachine.Runtime
             }
 
             return isValid;
-        }
-    }
-
-    [Serializable]
-    public class StateMachine<TState, TTransitionManager, TTransitionSequence> : StateMachine<TState, TTransitionSequence>
-        where TState : BaseState
-        where TTransitionManager : ITransitionManager<TState>, new()
-        where TTransitionSequence : ITransitionSequence<TState>, new()
-    {
-        public const float DefaultTickTimestep = 0.1f;
-        protected readonly float _tickTimestep;
-        protected readonly TTransitionManager _transitionManager;
-        public TTransitionManager TransitionManager => _transitionManager;
-
-        public StateMachine(TTransitionManager transitionManager, TTransitionSequence transitionSequence, float tickTimestep = DefaultTickTimestep)
-            : base(transitionSequence)
-        {
-            if (transitionManager == null)
-            {
-                throw new ArgumentNullException(nameof(transitionManager));
-            }
-
-            _transitionManager = transitionManager;
-            _tickTimestep = Mathf.Max(tickTimestep, 0f);
-        }
-
-        public override void Run()
-        {
-            base.Run();
-            if (!IsRunning) return;
-
-            TickAsync(_runningTokenSource.Token).Forget();
-        }
-
-        protected async Task TickAsync(CancellationToken cancellationToken)
-        {
-            do
-            {
-                await TransitionTask;
-
-                if (_transitionManager.TryFindTransition(CurrentState, out var nextState))
-                {
-                    await ChangeStateAsync(nextState, cancellationToken);
-                }
-                else
-                {
-                    await TaskUtility.WaitForSeconds(_tickTimestep, cancellationToken: cancellationToken);
-                }
-            } while (!cancellationToken.IsCancellationRequested);
-        }
-
-        protected override void OnStateChanged(TState state)
-        {
-            base.OnStateChanged(state);
-
-            _transitionManager.UpdateTransitions(state);
         }
     }
 
