@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Better.StateMachine.Runtime.Conditions
+namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public class FuncCondition : Condition
     {
