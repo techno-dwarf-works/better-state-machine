@@ -42,6 +42,20 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             UpdateTransitions(state);
         }
 
+        protected bool TryNextState()
+        {
+            foreach (var bundle in _currentBundles)
+            {
+                if (bundle.ValidateAny(StateMachine.CurrentState, out var transition))
+                {
+                    StateMachine.ChangeStateAsync(transition.To).Forget();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         #region Transitions
 
         public TransitionsModule<TState> AddTransition(TState from, TState to, ICondition condition)
@@ -120,7 +134,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             var condition = new FuncCondition(predicate);
             return AddTransition<TTo>(condition);
         }
-        
+
         private void UpdateTransitions(TState state)
         {
             _currentBundles.Clear();
@@ -141,9 +155,9 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
                 bundle.Recondition();
             }
         }
-        
+
         #endregion
-        
+
         private static bool ValidateNullReference(TState state, bool logException = true)
         {
             var isNull = state == null;

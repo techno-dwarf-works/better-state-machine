@@ -91,7 +91,7 @@ namespace Better.StateMachine.Runtime
             _transitionTokenSource?.Cancel();
             await TransitionTask;
 
-            _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_runningTokenSource.Token, cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
 
             CurrentState = await _transitionSequence.ChangingStateAsync(CurrentState, newState, _transitionTokenSource.Token);

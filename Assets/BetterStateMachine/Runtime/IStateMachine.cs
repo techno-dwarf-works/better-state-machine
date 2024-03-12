@@ -20,7 +20,7 @@ namespace Better.StateMachine.Runtime
         bool RemoveModule(Module<TState> module);
 
         void Run();
-        Task ChangeStateAsync(TState newState, CancellationToken cancellationToken);
+        Task ChangeStateAsync(TState newState, CancellationToken cancellationToken = default);
         bool InState<T>() where T : TState;
         void Stop();
     }
