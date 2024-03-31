@@ -37,19 +37,23 @@ namespace Better.StateMachine.Runtime.Modules
         }
 
         protected abstract void OnUnlinked();
-
-        public virtual void OnMachineRunned()
-        {
-        }
-
+        
         public virtual bool AllowRunMachine()
         {
             return true;
         }
 
+        public virtual void OnMachineRunned()
+        {
+        }
+
         public virtual bool AllowChangeState(TState state)
         {
             return true;
+        }
+
+        public virtual void OnStatePreChanged(TState state)
+        {
         }
 
         public virtual void OnStateChanged(TState state)

@@ -111,6 +111,9 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
+            _transitionTokenSource?.Cancel();
+            await TransitionTask;
+
             foreach (var module in _typeModuleMap.Values)
             {
                 if (!module.AllowChangeState(newState))
@@ -122,12 +125,10 @@ namespace Better.StateMachine.Runtime
                 }
             }
 
-            _transitionTokenSource?.Cancel();
-            await TransitionTask;
-
             _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_runningTokenSource.Token, cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
 
+            OnStatePreChanged(newState);
             CurrentState = await _transitionSequence.ChangingStateAsync(CurrentState, newState, _transitionTokenSource.Token);
             OnStateChanged(CurrentState);
 
@@ -135,9 +136,30 @@ namespace Better.StateMachine.Runtime
             _stateChangeCompletionSource = null;
         }
 
+        public Task ChangeStateAsync<T>(CancellationToken cancellationToken)
+            where T : TState, new()
+        {
+            var state = new T();
+            return ChangeStateAsync(state, cancellationToken);
+        }
+
         public void ChangeState(TState newState)
         {
             ChangeStateAsync(newState, CancellationToken.None).Forget();
+        }
+
+        public void ChangeState<T>()
+            where T : TState, new()
+        {
+            ChangeStateAsync<T>(CancellationToken.None).Forget();
+        }
+
+        protected virtual void OnStatePreChanged(TState state)
+        {
+            foreach (var module in _typeModuleMap.Values)
+            {
+                module.OnStatePreChanged(state);
+            }
         }
 
         protected virtual void OnStateChanged(TState state)
@@ -175,13 +197,22 @@ namespace Better.StateMachine.Runtime
             var type = module.GetType();
             if (HasModule(type))
             {
-                var message = $"Module of {nameof(type)}({type}) already added";
+                var message = $"{nameof(module)} of {nameof(type)}({type}) already added";
                 Debug.LogWarning(message);
                 return;
             }
 
             _typeModuleMap.Add(type, module);
             module.Link(this);
+        }
+
+        public TModule AddModule<TModule>()
+            where TModule : Module<TState>, new()
+        {
+            var module = new TModule();
+            AddModule(module);
+
+            return module;
         }
 
         public bool HasModule(Type type)
@@ -205,9 +236,10 @@ namespace Better.StateMachine.Runtime
             where TModule : Module<TState>
         {
             var type = typeof(TModule);
-            if (TryGetModule(type, out var mappedModule))
+            if (TryGetModule(type, out var mappedModule)
+                && mappedModule is TModule castedModule)
             {
-                module = (TModule)mappedModule;
+                module = castedModule;
                 return true;
             }
 
@@ -222,7 +254,7 @@ namespace Better.StateMachine.Runtime
                 return module;
             }
 
-            var message = $"Module of {nameof(type)}({type}) not found";
+            var message = $"Not found of {nameof(type)}({type})";
             DebugUtility.LogException<InvalidOperationException>(message);
             return null;
         }
@@ -236,9 +268,20 @@ namespace Better.StateMachine.Runtime
             }
 
             var type = typeof(TModule);
-            var message = $"Module of {nameof(type)}({type}) not found";
+            var message = $"Not found {nameof(type)}({type})";
             DebugUtility.LogException<InvalidOperationException>(message);
             return null;
+        }
+
+        public TModule GetOrAddModule<TModule>()
+            where TModule : Module<TState>, new()
+        {
+            if (TryGetModule<TModule>(out var module))
+            {
+                return module;
+            }
+
+            return AddModule<TModule>();
         }
 
         public bool RemoveModule(Type type)
