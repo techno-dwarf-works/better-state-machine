@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Threading;
 using Better.Extensions.Runtime;
 using Better.StateMachine.Runtime.States;
-using UnityEngine;
 
 namespace Better.StateMachine.Runtime.Modules
 {
@@ -10,36 +8,66 @@ namespace Better.StateMachine.Runtime.Modules
     {
         protected IStateMachine<TState> StateMachine { get; private set; }
 
-        internal void SetupInternal(IStateMachine<TState> stateMachine)
+        internal void Link(IStateMachine<TState> stateMachine)
         {
-            StateMachine = stateMachine;
-            OnSetup(stateMachine);
-        }
-
-        internal void OnMachineRunInternal(CancellationToken runningToken)
-        {
-            if (runningToken.IsCancellationRequested)
+            if (StateMachine != null)
             {
-                Debug.LogWarning("Was canceled before the start");
+                var message = $"Already linked to {nameof(StateMachine)}";
+                DebugUtility.LogException<InvalidOperationException>(message);
+                return;
             }
 
-            OnMachineRun(runningToken);
+            StateMachine = stateMachine;
+            OnLinked(stateMachine);
         }
 
-        internal void OnStateChangedInternal(TState state)
+        protected abstract void OnLinked(IStateMachine<TState> stateMachine);
+
+        internal void Unlink()
         {
-            OnStateChanged(state);
+            if (StateMachine == null)
+            {
+                var message = "Already unlinked";
+                DebugUtility.LogException<InvalidOperationException>(message);
+                return;
+            }
+
+            StateMachine = null;
+            OnUnlinked();
         }
 
-        internal void OnMachineStopInternal()
+        protected abstract void OnUnlinked();
+        
+        public virtual bool AllowRunMachine()
         {
-            OnMachineStop();
+            return true;
         }
 
-        protected abstract void OnSetup(IStateMachine<TState> stateMachine);
-        protected abstract void OnMachineRun(CancellationToken runningToken);
-        protected abstract void OnStateChanged(TState state);
-        protected abstract void OnMachineStop();
+        public virtual void OnMachineRunned()
+        {
+        }
+
+        public virtual bool AllowChangeState(TState state)
+        {
+            return true;
+        }
+
+        public virtual void OnStatePreChanged(TState state)
+        {
+        }
+
+        public virtual void OnStateChanged(TState state)
+        {
+        }
+
+        public virtual bool AllowStopMachine()
+        {
+            return true;
+        }
+
+        public virtual void OnMachineStopped()
+        {
+        }
 
         protected bool ValidateMachineRunning(bool targetState, bool logException = true)
         {
@@ -53,6 +81,11 @@ namespace Better.StateMachine.Runtime.Modules
             }
 
             return isValid;
+        }
+
+        public override string ToString()
+        {
+            return GetType().Name;
         }
     }
 }

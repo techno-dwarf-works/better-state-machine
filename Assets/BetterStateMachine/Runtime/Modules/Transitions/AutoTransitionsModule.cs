@@ -10,6 +10,8 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         where TState : BaseState
     {
         public const float DefaultTickTimestep = 0.1f;
+
+        private CancellationTokenSource _tokenSource;
         private float _tickTimestep;
 
         public AutoTransitionsModule(float tickTimestep = DefaultTickTimestep) : base()
@@ -17,12 +19,14 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             _tickTimestep = Mathf.Max(tickTimestep, 0f);
         }
 
-        protected override void OnMachineRun(CancellationToken runningToken)
+        public override void OnMachineRunned()
         {
-            base.OnMachineRun(runningToken);
-            if (runningToken.IsCancellationRequested) return;
-            
-            TickAsync(runningToken).Forget();
+            base.OnMachineRunned();
+
+            _tokenSource?.Cancel();
+            _tokenSource = new CancellationTokenSource();
+
+            TickAsync(_tokenSource.Token).Forget();
         }
 
         protected async Task TickAsync(CancellationToken cancellationToken)
@@ -36,6 +40,20 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
                     await TaskUtility.WaitForSeconds(_tickTimestep, cancellationToken);
                 }
             } while (!cancellationToken.IsCancellationRequested);
+        }
+
+        public override void OnMachineStopped()
+        {
+            base.OnMachineStopped();
+
+            _tokenSource?.Cancel();
+        }
+
+        protected override void OnUnlinked()
+        {
+            base.OnUnlinked();
+
+            _tokenSource?.Cancel();
         }
     }
 }

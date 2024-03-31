@@ -10,5 +10,10 @@ namespace Better.StateMachine.Runtime.States
 
         /// <summary> Called once, when the State Machine exits from this state </summary>
         public abstract Task ExitAsync(CancellationToken token);
+
+        public override string ToString()
+        {
+            return GetType().Name;
+        }
     }
 }
