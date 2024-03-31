@@ -20,7 +20,7 @@ namespace Better.StateMachine.Runtime
         private CancellationTokenSource _transitionTokenSource;
         private readonly TTransitionSequence _transitionSequence;
         private TaskCompletionSource<bool> _stateChangeCompletionSource;
-        private HashSet<Module<TState>> _modules;
+        private Dictionary<Type, Module<TState>> _typeModuleMap;
 
         public bool IsRunning { get; protected set; }
         public bool InTransition => _stateChangeCompletionSource != null;
@@ -35,7 +35,7 @@ namespace Better.StateMachine.Runtime
             }
 
             _transitionSequence = transitionSequence;
-            _modules = new();
+            _typeModuleMap = new();
         }
 
         public StateMachine() : this(new())
@@ -49,12 +49,23 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
+            foreach (var module in _typeModuleMap.Values)
+            {
+                if (!module.AllowRunMachine())
+                {
+                    var message = $"{module} not allow machine run";
+                    Debug.LogWarning(message);
+
+                    return;
+                }
+            }
+
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
 
-            foreach (var module in _modules)
+            foreach (var module in _typeModuleMap.Values)
             {
-                module.OnMachineRunInternal(_runningTokenSource.Token);
+                module.OnMachineRunned();
             }
         }
 
@@ -65,12 +76,23 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
+            foreach (var module in _typeModuleMap.Values)
+            {
+                if (!module.AllowStopMachine())
+                {
+                    var message = $"{module} not allow machine stop";
+                    Debug.LogWarning(message);
+
+                    return;
+                }
+            }
+
             IsRunning = false;
             _runningTokenSource?.Cancel();
 
-            foreach (var module in _modules)
+            foreach (var module in _typeModuleMap.Values)
             {
-                module.OnMachineStopInternal();
+                module.OnMachineStopped();
             }
         }
 
@@ -92,9 +114,21 @@ namespace Better.StateMachine.Runtime
             _transitionTokenSource?.Cancel();
             await TransitionTask;
 
+            foreach (var module in _typeModuleMap.Values)
+            {
+                if (!module.AllowChangeState(newState))
+                {
+                    var message = $"{module} not allow change state to {newState}";
+                    Debug.LogWarning(message);
+
+                    return;
+                }
+            }
+
             _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_runningTokenSource.Token, cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
 
+            OnStatePreChanged(newState);
             CurrentState = await _transitionSequence.ChangingStateAsync(CurrentState, newState, _transitionTokenSource.Token);
             OnStateChanged(CurrentState);
 
@@ -102,16 +136,37 @@ namespace Better.StateMachine.Runtime
             _stateChangeCompletionSource = null;
         }
 
+        public Task ChangeStateAsync<T>(CancellationToken cancellationToken)
+            where T : TState, new()
+        {
+            var state = new T();
+            return ChangeStateAsync(state, cancellationToken);
+        }
+
         public void ChangeState(TState newState)
         {
             ChangeStateAsync(newState, CancellationToken.None).Forget();
         }
 
+        public void ChangeState<T>()
+            where T : TState, new()
+        {
+            ChangeStateAsync<T>(CancellationToken.None).Forget();
+        }
+
+        protected virtual void OnStatePreChanged(TState state)
+        {
+            foreach (var module in _typeModuleMap.Values)
+            {
+                module.OnStatePreChanged(state);
+            }
+        }
+
         protected virtual void OnStateChanged(TState state)
         {
-            foreach (var module in _modules)
+            foreach (var module in _typeModuleMap.Values)
             {
-                module.OnStateChangedInternal(state);
+                module.OnStateChanged(state);
             }
 
             StateChanged?.Invoke(state);
@@ -134,47 +189,118 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
-            if (HasModule(module))
+            if (!ValidateRunning(false))
             {
-                var message = $"Module({module}) already added";
+                return;
+            }
+
+            var type = module.GetType();
+            if (HasModule(type))
+            {
+                var message = $"{nameof(module)} of {nameof(type)}({type}) already added";
                 Debug.LogWarning(message);
                 return;
             }
 
-            if (!ValidateRunning(false))
-            {
-                return;
-            }
-
-            module.SetupInternal(this);
-            _modules.Add(module);
+            _typeModuleMap.Add(type, module);
+            module.Link(this);
         }
 
-        public bool HasModule(Module<TState> module)
+        public TModule AddModule<TModule>()
+            where TModule : Module<TState>, new()
         {
-            if (module == null)
-            {
-                DebugUtility.LogException<ArgumentNullException>(nameof(module));
-                return false;
-            }
+            var module = new TModule();
+            AddModule(module);
 
-            return _modules.Contains(module);
+            return module;
         }
 
-        public bool RemoveModule(Module<TState> module)
+        public bool HasModule(Type type)
         {
-            if (module == null)
+            return _typeModuleMap.ContainsKey(type);
+        }
+
+        public bool HasModule<TModule>()
+            where TModule : Module<TState>
+        {
+            var type = typeof(TModule);
+            return HasModule(type);
+        }
+
+        public bool TryGetModule(Type type, out Module<TState> module)
+        {
+            return _typeModuleMap.TryGetValue(type, out module);
+        }
+
+        public bool TryGetModule<TModule>(out TModule module)
+            where TModule : Module<TState>
+        {
+            var type = typeof(TModule);
+            if (TryGetModule(type, out var mappedModule)
+                && mappedModule is TModule castedModule)
             {
-                DebugUtility.LogException<ArgumentNullException>(nameof(module));
-                return false;
+                module = castedModule;
+                return true;
             }
 
-            if (!ValidateRunning(false))
+            module = null;
+            return false;
+        }
+
+        public Module<TState> GetModule(Type type)
+        {
+            if (TryGetModule(type, out var module))
             {
-                return false;
+                return module;
             }
 
-            return _modules.Remove(module);
+            var message = $"Not found of {nameof(type)}({type})";
+            DebugUtility.LogException<InvalidOperationException>(message);
+            return null;
+        }
+
+        public TModule GetModule<TModule>()
+            where TModule : Module<TState>
+        {
+            if (TryGetModule<TModule>(out var module))
+            {
+                return module;
+            }
+
+            var type = typeof(TModule);
+            var message = $"Not found {nameof(type)}({type})";
+            DebugUtility.LogException<InvalidOperationException>(message);
+            return null;
+        }
+
+        public TModule GetOrAddModule<TModule>()
+            where TModule : Module<TState>, new()
+        {
+            if (TryGetModule<TModule>(out var module))
+            {
+                return module;
+            }
+
+            return AddModule<TModule>();
+        }
+
+        public bool RemoveModule(Type type)
+        {
+            if (_typeModuleMap.TryGetValue(type, out var module)
+                && _typeModuleMap.Remove(type))
+            {
+                module.Unlink();
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool RemoveModule<TModule>()
+            where TModule : Module<TState>
+        {
+            var type = typeof(TModule);
+            return RemoveModule(type);
         }
 
         #endregion

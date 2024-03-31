@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using Better.Extensions.Runtime;
 using Better.StateMachine.Runtime.States;
 
@@ -20,24 +19,28 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             _currentBundles = new();
         }
 
-        protected override void OnSetup(IStateMachine<TState> stateMachine)
+        protected override void OnLinked(IStateMachine<TState> stateMachine)
         {
             _currentBundles.Clear();
             _currentBundles.Add(_anyToBundles);
         }
 
-        protected override void OnMachineRun(CancellationToken runningToken)
+        protected override void OnUnlinked()
         {
+        }
+
+        public override void OnMachineRunned()
+        {
+            base.OnMachineRunned();
+
             ReconditionTransitions();
         }
 
-        protected override void OnStateChanged(TState state)
+        public override void OnStateChanged(TState state)
         {
-            UpdateTransitions(state);
-        }
+            base.OnStateChanged(state);
 
-        protected override void OnMachineStop()
-        {
+            UpdateTransitions(state);
         }
 
         protected bool TryNextState()
