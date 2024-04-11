@@ -1,12 +1,12 @@
 {
   "name": "com.tdw.better.statemachine",
   "displayName": "Better StateMachine",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "unity": "2021.3",
   "description": " ",
   "dependencies": {
     "com.tdw.better.internal.core": "0.0.2",
-    "com.uurha.betterextensions": "1.5.98"
+    "com.tdw.better.commons": "0.0.2"
   },
   "author": {
     "name": "Better Plugins",
@@ -21,12 +21,5 @@
     "state machine",
     "pattern",
     "patterns"
-  ],
-  "samples": [
-    {
-      "displayName": "Default samples",
-      "description": "Contains test samples",
-      "path": "Samples~/TestSamples"
-    }
   ]
 }

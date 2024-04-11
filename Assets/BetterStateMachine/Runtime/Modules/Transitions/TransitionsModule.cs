@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Better.Extensions.Runtime;
+using Better.Commons.Runtime.Extensions;
+using Better.Commons.Runtime.Utility;
 using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
