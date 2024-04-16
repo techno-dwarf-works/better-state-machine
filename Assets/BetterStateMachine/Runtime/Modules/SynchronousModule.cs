@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Better.StateMachine.Runtime.Modules
 {
-    public class SynchronousModule<TState> : Module<TState>
+    public class SynchronousModule<TState> : SingleModule<TState>
         where TState : BaseState
     {
         private readonly bool _onlySyncState;
@@ -12,39 +12,35 @@ namespace Better.StateMachine.Runtime.Modules
 
         private float _cachedFrame;
 
-        public SynchronousModule(bool onlySyncState = true, bool allowLogs = true)
+        public SynchronousModule(bool onlySyncState, bool allowLogs)
         {
             _onlySyncState = onlySyncState;
             _allowLogs = allowLogs;
         }
 
-        protected override void OnLinked(IStateMachine<TState> stateMachine)
+        public SynchronousModule() : this(true, true)
         {
         }
 
-        protected override void OnUnlinked()
+        public override bool AllowRunMachine(IStateMachine<TState> stateMachine)
         {
+            return base.AllowRunMachine(stateMachine) && ValidateStateType<TState>(_allowLogs);
         }
 
-        public override bool AllowRunMachine()
+        public override bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
         {
-            return base.AllowRunMachine() && ValidateStateType<TState>(_allowLogs);
+            return base.AllowChangeState(stateMachine, state) && ValidateStateType(state, _allowLogs);
         }
 
-        public override bool AllowChangeState(TState state)
+        public override void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
         {
-            return base.AllowChangeState(state) && ValidateStateType(state, _allowLogs);
-        }
-
-        public override void OnStatePreChanged(TState state)
-        {
-            base.OnStatePreChanged(state);
+            base.OnStatePreChanged(stateMachine, state);
             _cachedFrame = Time.frameCount;
         }
 
-        public override void OnStateChanged(TState state)
+        public override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
         {
-            base.OnStateChanged(state);
+            base.OnStateChanged(stateMachine, state);
 
             if (_cachedFrame < Time.frameCount && _allowLogs)
             {
