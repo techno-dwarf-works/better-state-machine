@@ -14,20 +14,16 @@ namespace Better.StateMachine.Runtime
         TState CurrentState { get; }
         bool InTransition { get; }
         Task TransitionTask { get; }
-        
+
         void Run();
-        Task ChangeStateAsync(TState newState, CancellationToken cancellationToken = default);
         bool InState<T>() where T : TState;
+        Task ChangeStateAsync(TState newState, CancellationToken cancellationToken = default);
         void Stop();
-        
-        public void AddModule(Module<TState> module);
+
+        public bool AddModule(Module<TState> module);
+        public bool HasModule(Module<TState> module);
         public bool HasModule(Type type);
-        public bool HasModule<TModule>() where TModule : Module<TState>;
         public bool TryGetModule(Type type, out Module<TState> module);
-        public bool TryGetModule<TModule>(out TModule module) where TModule : Module<TState>;
-        public Module<TState> GetModule(Type type);
-        public TModule GetModule<TModule>() where TModule : Module<TState>;
-        public bool RemoveModule(Type type);
-        public bool RemoveModule<TModule>() where TModule : Module<TState>;
+        public bool RemoveModule(Module<TState> module);
     }
 }

@@ -10,20 +10,31 @@ namespace Better.StateMachine.Runtime.Modules
     {
         public event Action<TState> Cached;
 
+        private readonly bool _autoCache;
+        private readonly bool _autoClear;
         private readonly Dictionary<Type, TState> _typeInstanceMap;
 
-        public StatesCacheModule()
+        public StatesCacheModule(bool autoCache, bool autoClear)
         {
             _typeInstanceMap = new();
+            autoCache = autoCache;
+            _autoClear = autoClear;
+        }
+
+        public StatesCacheModule() : this(true, true)
+        {
         }
 
         protected override void OnLinked(IStateMachine<TState> stateMachine)
         {
         }
 
-        protected override void OnUnlinked()
+        protected override void OnUnlinked(IStateMachine<TState> stateMachine)
         {
-            ClearCache();
+            if (_autoClear && !IsLinked)
+            {
+                ClearCache();
+            }
         }
 
         public void Cache(TState state)
@@ -39,11 +50,6 @@ namespace Better.StateMachine.Runtime.Modules
             OnCached(state);
         }
 
-        protected virtual void OnCached(TState state)
-        {
-            Cached?.Invoke(state);
-        }
-
         public T Cache<T>() where T : TState, new()
         {
             var state = new T();
@@ -52,9 +58,32 @@ namespace Better.StateMachine.Runtime.Modules
             return state;
         }
 
+        protected virtual void OnCached(TState state)
+        {
+            Cached?.Invoke(state);
+        }
+
         public bool Contains(Type type)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return false;
+            }
+
             return _typeInstanceMap.ContainsKey(type);
+        }
+
+        public bool Contains(TState state)
+        {
+            if (state == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(state));
+                return false;
+            }
+
+            var type = state.GetType();
+            return Remove(type);
         }
 
         public bool Contains<T>()
@@ -66,6 +95,14 @@ namespace Better.StateMachine.Runtime.Modules
 
         public bool TryGet(Type type, out TState module)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+
+                module = default;
+                return false;
+            }
+
             return _typeInstanceMap.TryGetValue(type, out module);
         }
 
@@ -85,6 +122,12 @@ namespace Better.StateMachine.Runtime.Modules
 
         public TState Get(Type type)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return default;
+            }
+
             if (TryGet(type, out var module))
             {
                 return module;
@@ -120,7 +163,25 @@ namespace Better.StateMachine.Runtime.Modules
 
         public bool Remove(Type type)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return false;
+            }
+
             return _typeInstanceMap.Remove(type);
+        }
+
+        public bool Remove(TState state)
+        {
+            if (state == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(state));
+                return false;
+            }
+
+            var type = state.GetType();
+            return Remove(type);
         }
 
         public bool Remove<T>() where T : TState
@@ -129,12 +190,16 @@ namespace Better.StateMachine.Runtime.Modules
             return Remove(type);
         }
 
-        public override void OnStatePreChanged(TState state)
+        public override void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
         {
-            base.OnStatePreChanged(state);
-            Cache(state);
+            base.OnStatePreChanged(stateMachine, state);
+
+            if (_autoCache)
+            {
+                Cache(state);
+            }
         }
-        
+
         public void ClearCache()
         {
             _typeInstanceMap.Clear();

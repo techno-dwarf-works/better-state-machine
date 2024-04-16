@@ -52,7 +52,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _typeModuleMap.Values)
             {
-                if (!module.AllowRunMachine())
+                if (!module.AllowRunMachine(this))
                 {
                     var message = $"{module} not allow machine run";
                     Debug.LogWarning(message);
@@ -66,7 +66,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _typeModuleMap.Values)
             {
-                module.OnMachineRunned();
+                module.OnMachineRunned(this);
             }
         }
 
@@ -79,7 +79,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _typeModuleMap.Values)
             {
-                if (!module.AllowStopMachine())
+                if (!module.AllowStopMachine(this))
                 {
                     var message = $"{module} not allow machine stop";
                     Debug.LogWarning(message);
@@ -93,7 +93,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _typeModuleMap.Values)
             {
-                module.OnMachineStopped();
+                module.OnMachineStopped(this);
             }
         }
 
@@ -117,7 +117,7 @@ namespace Better.StateMachine.Runtime
 
             foreach (var module in _typeModuleMap.Values)
             {
-                if (!module.AllowChangeState(newState))
+                if (!module.AllowChangeState(this, newState))
                 {
                     var message = $"{module} not allow change state to {newState}";
                     Debug.LogWarning(message);
@@ -159,7 +159,7 @@ namespace Better.StateMachine.Runtime
         {
             foreach (var module in _typeModuleMap.Values)
             {
-                module.OnStatePreChanged(state);
+                module.OnStatePreChanged(this, state);
             }
         }
 
@@ -167,7 +167,7 @@ namespace Better.StateMachine.Runtime
         {
             foreach (var module in _typeModuleMap.Values)
             {
-                module.OnStateChanged(state);
+                module.OnStateChanged(this, state);
             }
 
             StateChanged?.Invoke(state);
@@ -182,17 +182,17 @@ namespace Better.StateMachine.Runtime
 
         #region Modules
 
-        public void AddModule(Module<TState> module)
+        public bool AddModule(Module<TState> module)
         {
             if (module == null)
             {
                 DebugUtility.LogException<ArgumentNullException>(nameof(module));
-                return;
+                return false;
             }
 
             if (!ValidateRunning(false))
             {
-                return;
+                return false;
             }
 
             var type = module.GetType();
@@ -200,11 +200,19 @@ namespace Better.StateMachine.Runtime
             {
                 var message = $"{nameof(module)} of {nameof(type)}({type}) already added";
                 Debug.LogWarning(message);
-                return;
+                return false;
+            }
+
+            if (!module.AllowLinkTo(this))
+            {
+                var message = $"{nameof(module)} of {nameof(type)}({type}) not allowed linked";
+                Debug.LogWarning(message);
+                return false;
             }
 
             _typeModuleMap.Add(type, module);
             module.Link(this);
+            return true;
         }
 
         public TModule AddModule<TModule>()
@@ -218,6 +226,12 @@ namespace Better.StateMachine.Runtime
 
         public bool HasModule(Type type)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return false;
+            }
+
             return _typeModuleMap.ContainsKey(type);
         }
 
@@ -228,8 +242,27 @@ namespace Better.StateMachine.Runtime
             return HasModule(type);
         }
 
+        public bool HasModule(Module<TState> module)
+        {
+            if (module == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            return _typeModuleMap.ContainsValue(module);
+        }
+
         public bool TryGetModule(Type type, out Module<TState> module)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+
+                module = default;
+                return false;
+            }
+
             return _typeModuleMap.TryGetValue(type, out module);
         }
 
@@ -250,6 +283,12 @@ namespace Better.StateMachine.Runtime
 
         public Module<TState> GetModule(Type type)
         {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return null;
+            }
+
             if (TryGetModule(type, out var module))
             {
                 return module;
@@ -285,28 +324,44 @@ namespace Better.StateMachine.Runtime
             return AddModule<TModule>();
         }
 
-        public bool RemoveModule(Type type)
+        public bool RemoveModule(Module<TState> module)
         {
-            if (_typeModuleMap.TryGetValue(type, out var module)
-                && _typeModuleMap.Remove(type))
+            if (module == null)
             {
-                module.Unlink();
+                DebugUtility.LogException<ArgumentNullException>(nameof(module));
+                return false;
+            }
+
+            var type = module.GetType();
+            if (_typeModuleMap.Remove(type))
+            {
+                module.Unlink(this);
                 return true;
             }
 
             return false;
         }
 
+        public bool RemoveModule(Type type)
+        {
+            if (type == null)
+            {
+                DebugUtility.LogException<ArgumentNullException>(nameof(type));
+                return false;
+            }
+
+            return TryGetModule(type, out var module) && RemoveModule(module);
+        }
+
         public bool RemoveModule<TModule>()
             where TModule : Module<TState>
         {
-            var type = typeof(TModule);
-            return RemoveModule(type);
+            return TryGetModule<TModule>(out var module) && RemoveModule(module);
         }
 
         #endregion
 
-        private bool ValidateRunning(bool targetState, bool logException = true)
+        protected bool ValidateRunning(bool targetState, bool logException = true)
         {
             var isValid = IsRunning == targetState;
             if (!isValid && logException)

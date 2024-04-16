@@ -6,7 +6,7 @@ using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
 {
-    public abstract class TransitionsModule<TState> : Module<TState>
+    public abstract class TransitionsModule<TState> : SingleModule<TState>
         where TState : BaseState
     {
         protected readonly Dictionary<TState, TransitionBundle<TState>> _outfromingBundles;
@@ -22,24 +22,22 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
 
         protected override void OnLinked(IStateMachine<TState> stateMachine)
         {
+            base.OnLinked(stateMachine);
+
             _currentBundles.Clear();
             _currentBundles.Add(_anyToBundles);
         }
 
-        protected override void OnUnlinked()
+        public override void OnMachineRunned(IStateMachine<TState> stateMachine)
         {
-        }
-
-        public override void OnMachineRunned()
-        {
-            base.OnMachineRunned();
+            base.OnMachineRunned(stateMachine);
 
             ReconditionTransitions();
         }
 
-        public override void OnStateChanged(TState state)
+        public override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
         {
-            base.OnStateChanged(state);
+            base.OnStateChanged(stateMachine, state);
 
             UpdateTransitions(state);
         }

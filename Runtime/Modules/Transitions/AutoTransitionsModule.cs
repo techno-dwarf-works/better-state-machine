@@ -15,14 +15,18 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         private CancellationTokenSource _tokenSource;
         private float _tickTimestep;
 
-        public AutoTransitionsModule(float tickTimestep = DefaultTickTimestep) : base()
+        public AutoTransitionsModule(float tickTimestep)
         {
             _tickTimestep = Mathf.Max(tickTimestep, 0f);
         }
 
-        public override void OnMachineRunned()
+        public AutoTransitionsModule() : this(DefaultTickTimestep)
         {
-            base.OnMachineRunned();
+        }
+
+        public override void OnMachineRunned(IStateMachine<TState> stateMachine)
+        {
+            base.OnMachineRunned(stateMachine);
 
             _tokenSource?.Cancel();
             _tokenSource = new CancellationTokenSource();
@@ -43,16 +47,16 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             } while (!cancellationToken.IsCancellationRequested);
         }
 
-        public override void OnMachineStopped()
+        public override void OnMachineStopped(IStateMachine<TState> stateMachine)
         {
-            base.OnMachineStopped();
+            base.OnMachineStopped(stateMachine);
 
             _tokenSource?.Cancel();
         }
 
-        protected override void OnUnlinked()
+        protected override void OnUnlinked(IStateMachine<TState> stateMachine)
         {
-            base.OnUnlinked();
+            base.OnUnlinked(stateMachine);
 
             _tokenSource?.Cancel();
         }
