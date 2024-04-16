@@ -6,77 +6,76 @@ namespace Better.StateMachine.Runtime.Modules
 {
     public abstract class Module<TState> where TState : BaseState
     {
-        protected IStateMachine<TState> StateMachine { get; private set; }
+        public int LinksCount { get; private set; }
+        public bool IsLinked => LinksCount > 0;
+
+        public virtual bool AllowLinkTo(IStateMachine<TState> stateMachine)
+        {
+            return true;
+        }
 
         internal void Link(IStateMachine<TState> stateMachine)
         {
-            if (StateMachine != null)
-            {
-                var message = $"Already linked to {nameof(StateMachine)}";
-                DebugUtility.LogException<InvalidOperationException>(message);
-                return;
-            }
-
-            StateMachine = stateMachine;
+            LinksCount++;
             OnLinked(stateMachine);
         }
 
         protected abstract void OnLinked(IStateMachine<TState> stateMachine);
 
-        internal void Unlink()
+        internal void Unlink(IStateMachine<TState> stateMachine)
         {
-            if (StateMachine == null)
+            LinksCount--;
+            OnUnlinked(stateMachine);
+        }
+
+        protected abstract void OnUnlinked(IStateMachine<TState> stateMachine);
+
+        public virtual bool AllowRunMachine(IStateMachine<TState> stateMachine)
+        {
+            return true;
+        }
+
+        public virtual void OnMachineRunned(IStateMachine<TState> stateMachine)
+        {
+        }
+
+        public virtual bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
+        {
+            return true;
+        }
+
+        public virtual void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
+        {
+        }
+
+        public virtual void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
+        {
+        }
+
+        public virtual bool AllowStopMachine(IStateMachine<TState> stateMachine)
+        {
+            return true;
+        }
+
+        public virtual void OnMachineStopped(IStateMachine<TState> stateMachine)
+        {
+        }
+
+        protected bool ValidateMachineRunning(IStateMachine<TState> stateMachine, bool targetState, bool logException = true)
+        {
+            if (stateMachine == null)
             {
-                var message = "Already unlinked";
+                var message = $"Is not valid, {nameof(stateMachine)} is null";
                 DebugUtility.LogException<InvalidOperationException>(message);
-                return;
+                return false;
             }
 
-            StateMachine = null;
-            OnUnlinked();
-        }
-
-        protected abstract void OnUnlinked();
-        
-        public virtual bool AllowRunMachine()
-        {
-            return true;
-        }
-
-        public virtual void OnMachineRunned()
-        {
-        }
-
-        public virtual bool AllowChangeState(TState state)
-        {
-            return true;
-        }
-
-        public virtual void OnStatePreChanged(TState state)
-        {
-        }
-
-        public virtual void OnStateChanged(TState state)
-        {
-        }
-
-        public virtual bool AllowStopMachine()
-        {
-            return true;
-        }
-
-        public virtual void OnMachineStopped()
-        {
-        }
-
-        protected bool ValidateMachineRunning(bool targetState, bool logException = true)
-        {
-            var isRunning = StateMachine?.IsRunning ?? false;
+            var isRunning = stateMachine.IsRunning;
             var isValid = isRunning == targetState;
             if (!isValid && logException)
             {
                 var reason = targetState ? "not running" : "is running";
-                var message = $"Is not valid, {nameof(StateMachine)} {reason}";
+                var message = $"Is not valid, {nameof(stateMachine)} {reason}";
                 DebugUtility.LogException<InvalidOperationException>(message);
             }
 
@@ -87,5 +86,9 @@ namespace Better.StateMachine.Runtime.Modules
         {
             return GetType().Name;
         }
+    }
+
+    public abstract class Module : Module<BaseState>
+    {
     }
 }
