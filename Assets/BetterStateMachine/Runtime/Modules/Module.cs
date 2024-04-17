@@ -87,8 +87,4 @@ namespace Better.StateMachine.Runtime.Modules
             return GetType().Name;
         }
     }
-
-    public abstract class Module : Module<BaseState>
-    {
-    }
 }
