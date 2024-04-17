@@ -16,7 +16,7 @@ namespace Better.StateMachine.Runtime.Modules
 
         protected override void OnLinked(IStateMachine<TState> stateMachine)
         {
-            if (IsLinked)
+            if (LinksCount > 1)
             {
                 var message = "Already linked";
                 DebugUtility.LogException<InvalidOperationException>(message);
@@ -30,24 +30,15 @@ namespace Better.StateMachine.Runtime.Modules
 
         protected override void OnUnlinked(IStateMachine<TState> stateMachine)
         {
-            if (!IsLinked)
+            if (StateMachine == stateMachine)
             {
-                var message = "Already unlinked";
-                DebugUtility.LogException<InvalidOperationException>(message);
-
-                return;
+                StateMachine = null;
             }
-
-            StateMachine = null;
         }
 
         protected bool ValidateMachineRunning(bool targetState, bool logException = true)
         {
             return ValidateMachineRunning(StateMachine, targetState, logException);
         }
-    }
-
-    public abstract class SingleModule : SingleModule<BaseState>
-    {
     }
 }

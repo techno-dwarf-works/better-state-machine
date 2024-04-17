@@ -5,7 +5,7 @@ namespace Better.StateMachine.Runtime.States
 {
     public abstract class SynchronousState : BaseState
     {
-        public override Task EnterAsync(CancellationToken token)
+        public sealed override Task EnterAsync(CancellationToken token)
         {
             if (!token.IsCancellationRequested)
             {
@@ -17,7 +17,7 @@ namespace Better.StateMachine.Runtime.States
 
         public abstract void Enter();
 
-        public override Task ExitAsync(CancellationToken token)
+        public sealed override Task ExitAsync(CancellationToken token)
         {
             if (!token.IsCancellationRequested)
             {
