@@ -6,13 +6,13 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
     {
         private TValue _defaultValue;
 
-        protected TriggerCondition(IEqualityComparer<TValue> equalityComparer, TValue targetValue, TValue defaultValue = default)
+        public TriggerCondition(IEqualityComparer<TValue> equalityComparer, TValue targetValue, TValue defaultValue = default)
             : base(equalityComparer, targetValue, defaultValue)
         {
             _defaultValue = defaultValue;
         }
 
-        protected TriggerCondition(TValue targetValue, TValue defaultValue = default)
+        public TriggerCondition(TValue targetValue, TValue defaultValue = default)
             : base(EqualityComparer<TValue>.Default, targetValue, defaultValue)
         {
         }
