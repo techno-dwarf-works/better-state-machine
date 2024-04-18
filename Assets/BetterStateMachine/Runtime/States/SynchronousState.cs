@@ -1,8 +1,10 @@
-﻿using System.Threading;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Better.StateMachine.Runtime.States
 {
+    [Serializable]
     public abstract class SynchronousState : BaseState
     {
         public sealed override Task EnterAsync(CancellationToken token)
