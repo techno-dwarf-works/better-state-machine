@@ -1,8 +1,10 @@
+using System;
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace Better.StateMachine.Runtime.States
 {
+    [Serializable]
     public abstract class BaseState
     {
         /// <summary> Called once, when the StateMachine enters this state </summary>
