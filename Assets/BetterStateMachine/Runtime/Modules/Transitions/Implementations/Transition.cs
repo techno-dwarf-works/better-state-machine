@@ -1,20 +1,28 @@
-﻿using Better.StateMachine.Runtime.States;
+﻿using Better.Conditions.Runtime;
+using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
 {
     public abstract class Transition<TState>
         where TState : BaseState
     {
-        private readonly ICondition _condition;
+        private readonly Condition _condition;
         public TState To { get; }
 
-        protected Transition(TState to, ICondition condition)
+        protected Transition(TState to, Condition condition)
         {
             To = to;
             _condition = condition;
         }
 
-        public void Recondition() => _condition.Recondition();
-        public virtual bool Validate(TState current) => _condition.Verify();
+        public void Recondition()
+        {
+            _condition.Rebuild();
+        }
+
+        public virtual bool Validate(TState current)
+        {
+            return _condition.Invoke();
+        }
     }
 }

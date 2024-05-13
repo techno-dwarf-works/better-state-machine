@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Better.Commons.Runtime.Extensions;
 using Better.Commons.Runtime.Utility;
+using Better.Conditions.Runtime;
 using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
@@ -58,22 +59,21 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
 
         #region Transitions
 
-        public TransitionsModule<TState> AddTransition(TState from, TState to, ICondition condition)
+        public TransitionsModule<TState> AddTransition(TState from, TState to, Condition condition)
         {
             if (!ValidateNullReference(from) || !ValidateNullReference(to) || !ValidateMachineRunning(false))
             {
                 return this;
             }
 
-            var transition = new FromToTransition<TState>(from, to, condition);
-            var key = transition.From;
-
+            var key = from;
             if (!_outfromingBundles.TryGetValue(key, out var transitionBundle))
             {
                 transitionBundle = new TransitionBundle<TState>();
                 _outfromingBundles.Add(key, transitionBundle);
             }
 
+            var transition = new FromToTransition<TState>(from, to, condition);
             transitionBundle.Add(transition);
 
             return this;
@@ -81,11 +81,17 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
 
         public TransitionsModule<TState> AddTransition(TState from, TState to, Func<bool> predicate)
         {
-            var condition = new FuncCondition(predicate);
+            var condition = new PredicateCondition(predicate);
             return AddTransition(from, to, condition);
         }
 
-        public TransitionsModule<TState> AddTransition<TFrom, TTo>(ICondition condition)
+        public TransitionsModule<TState> AddTransition(TState from, TState to, Action reconditionAction, Func<bool> predicate)
+        {
+            var condition = new PredicateCondition(reconditionAction, predicate);
+            return AddTransition(from, to, condition);
+        }
+
+        public TransitionsModule<TState> AddTransition<TFrom, TTo>(Condition condition)
             where TFrom : TState, new()
             where TTo : TState, new()
         {
@@ -98,11 +104,19 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             where TFrom : TState, new()
             where TTo : TState, new()
         {
-            var condition = new FuncCondition(predicate);
+            var condition = new PredicateCondition(predicate);
             return AddTransition<TFrom, TTo>(condition);
         }
 
-        public TransitionsModule<TState> AddTransition(TState to, ICondition condition)
+        public TransitionsModule<TState> AddTransition<TFrom, TTo>(Action reconditionAction, Func<bool> predicate)
+            where TFrom : TState, new()
+            where TTo : TState, new()
+        {
+            var condition = new PredicateCondition(reconditionAction, predicate);
+            return AddTransition<TFrom, TTo>(condition);
+        }
+
+        public TransitionsModule<TState> AddTransition(TState to, Condition condition)
         {
             if (!ValidateNullReference(to) || !ValidateMachineRunning(false))
             {
@@ -117,11 +131,17 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
 
         public TransitionsModule<TState> AddTransition(TState to, Func<bool> predicate)
         {
-            var condition = new FuncCondition(predicate);
+            var condition = new PredicateCondition(predicate);
             return AddTransition(to, condition);
         }
 
-        public TransitionsModule<TState> AddTransition<TTo>(ICondition condition)
+        public TransitionsModule<TState> AddTransition(TState to, Action reconditionAction, Func<bool> predicate)
+        {
+            var condition = new PredicateCondition(reconditionAction, predicate);
+            return AddTransition(to, condition);
+        }
+
+        public TransitionsModule<TState> AddTransition<TTo>(Condition condition)
             where TTo : TState, new()
         {
             TTo state = new();
@@ -131,7 +151,14 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         public TransitionsModule<TState> AddTransition<TTo>(Func<bool> predicate)
             where TTo : TState, new()
         {
-            var condition = new FuncCondition(predicate);
+            var condition = new PredicateCondition(predicate);
+            return AddTransition<TTo>(condition);
+        }
+
+        public TransitionsModule<TState> AddTransition<TTo>(Action reconditionAction, Func<bool> predicate)
+            where TTo : TState, new()
+        {
+            var condition = new PredicateCondition(reconditionAction, predicate);
             return AddTransition<TTo>(condition);
         }
 
