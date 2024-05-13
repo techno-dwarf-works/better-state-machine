@@ -2,7 +2,8 @@
     "name": "BetterStateMachine.Runtime",
     "rootNamespace": "Better.StateMachine.Runtime",
     "references": [
-        "GUID:8bd4b41f8da90144d9006c4d926c9679"
+        "GUID:8bd4b41f8da90144d9006c4d926c9679",
+        "GUID:fe96bdec06a75af4184a0252929f642e"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
