@@ -1,4 +1,5 @@
-﻿using Better.StateMachine.Runtime.States;
+﻿using Better.Conditions.Runtime;
+using Better.StateMachine.Runtime.States;
 
 namespace Better.StateMachine.Runtime.Modules.Transitions
 {
@@ -6,7 +7,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
     {
         public TState From { get; }
 
-        public FromToTransition(TState from, TState to, ICondition condition)
+        public FromToTransition(TState from, TState to, Condition condition)
             : base(to, condition)
         {
             From = from;
