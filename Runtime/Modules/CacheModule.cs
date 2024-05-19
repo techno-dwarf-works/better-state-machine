@@ -90,8 +90,20 @@ namespace Better.StateMachine.Runtime.Modules
             DebugUtility.LogException<InvalidOperationException>(message);
             return state;
         }
-        
-        public bool RemoveState<T>() where T : TState
+
+        public T GetOrAddState<T>()
+            where T : TState, new()
+        {
+            if (!TryGetState(out T state))
+            {
+                state = CacheState<T>();
+            }
+
+            return state;
+        }
+
+        public bool RemoveState<T>()
+            where T : TState
         {
             var type = typeof(T);
             return _stateLocator.Remove(type);
