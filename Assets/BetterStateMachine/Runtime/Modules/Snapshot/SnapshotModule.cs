@@ -2,7 +2,7 @@
 
 namespace Better.StateMachine.Runtime.Modules.Snapshot
 {
-    public abstract class SnapshotModule<TState> : SingleModule<TState>
+    public class SnapshotModule<TState> : SingleModule<TState>
         where TState : BaseState
     {
         private SnapshotToken _currentToken;
@@ -13,7 +13,7 @@ namespace Better.StateMachine.Runtime.Modules.Snapshot
             return _currentToken;
         }
 
-        public override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
+        protected internal override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
         {
             base.OnStateChanged(stateMachine, state);
 

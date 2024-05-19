@@ -20,10 +20,10 @@ namespace Better.StateMachine.Runtime
         Task ChangeStateAsync(TState newState, CancellationToken cancellationToken = default);
         void Stop();
 
-        public bool AddModule(Module<TState> module);
+        public bool TryAddModule<TModule>(TModule module) where TModule : Module<TState>;
         public bool HasModule(Module<TState> module);
-        public bool HasModule(Type type);
-        public bool TryGetModule(Type type, out Module<TState> module);
+        public bool HasModule<TModule>() where TModule : Module<TState>;
+        public bool TryGetModule<TModule>(out TModule module) where TModule : Module<TState>;
         public bool RemoveModule(Module<TState> module);
     }
 }
