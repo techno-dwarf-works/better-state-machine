@@ -9,55 +9,44 @@ namespace Better.StateMachine.Runtime.Modules
         public int LinksCount { get; private set; }
         public bool IsLinked => LinksCount > 0;
 
-        public virtual bool AllowLinkTo(IStateMachine<TState> stateMachine)
+        protected internal virtual bool AllowLinkTo(IStateMachine<TState> stateMachine)
         {
             return true;
         }
 
-        internal void Link(IStateMachine<TState> stateMachine)
+        protected internal virtual void Link(IStateMachine<TState> stateMachine)
         {
             LinksCount++;
-            OnLinked(stateMachine);
         }
 
-        protected abstract void OnLinked(IStateMachine<TState> stateMachine);
-
-        internal void Unlink(IStateMachine<TState> stateMachine)
-        {
-            LinksCount--;
-            OnUnlinked(stateMachine);
-        }
-
-        protected abstract void OnUnlinked(IStateMachine<TState> stateMachine);
-
-        public virtual bool AllowRunMachine(IStateMachine<TState> stateMachine)
+        protected internal virtual bool AllowRunMachine(IStateMachine<TState> stateMachine)
         {
             return true;
         }
 
-        public virtual void OnMachineRunned(IStateMachine<TState> stateMachine)
+        protected internal virtual void OnMachineRunned(IStateMachine<TState> stateMachine)
         {
         }
 
-        public virtual bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
-        {
-            return true;
-        }
-
-        public virtual void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
-        {
-        }
-
-        public virtual void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
-        {
-        }
-
-        public virtual bool AllowStopMachine(IStateMachine<TState> stateMachine)
+        protected internal virtual bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
         {
             return true;
         }
 
-        public virtual void OnMachineStopped(IStateMachine<TState> stateMachine)
+        protected internal virtual void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
+        {
+        }
+
+        protected internal virtual void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
+        {
+        }
+
+        protected internal virtual bool AllowStopMachine(IStateMachine<TState> stateMachine)
+        {
+            return true;
+        }
+
+        protected internal virtual void OnMachineStopped(IStateMachine<TState> stateMachine)
         {
         }
 
@@ -82,9 +71,9 @@ namespace Better.StateMachine.Runtime.Modules
             return isValid;
         }
 
-        public override string ToString()
+        protected internal virtual void Unlink(IStateMachine<TState> stateMachine)
         {
-            return GetType().Name;
+            LinksCount--;
         }
     }
 }
