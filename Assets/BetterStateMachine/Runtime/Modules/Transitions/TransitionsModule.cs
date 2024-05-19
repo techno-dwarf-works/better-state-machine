@@ -21,22 +21,22 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             _currentBundles = new();
         }
 
-        protected override void OnLinked(IStateMachine<TState> stateMachine)
+        protected internal override void Link(IStateMachine<TState> stateMachine)
         {
-            base.OnLinked(stateMachine);
-
+            base.Link(stateMachine);
+            
             _currentBundles.Clear();
             _currentBundles.Add(_anyToBundles);
         }
 
-        public override void OnMachineRunned(IStateMachine<TState> stateMachine)
+        protected internal override void OnMachineRunned(IStateMachine<TState> stateMachine)
         {
             base.OnMachineRunned(stateMachine);
 
             ReconditionTransitions();
         }
 
-        public override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
+        protected internal override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
         {
             base.OnStateChanged(stateMachine, state);
 

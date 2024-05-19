@@ -9,13 +9,15 @@ namespace Better.StateMachine.Runtime.Modules
     {
         protected IStateMachine<TState> StateMachine { get; private set; }
 
-        public override bool AllowLinkTo(IStateMachine<TState> stateMachine)
+        protected internal override bool AllowLinkTo(IStateMachine<TState> stateMachine)
         {
             return base.AllowLinkTo(stateMachine) && !IsLinked;
         }
 
-        protected override void OnLinked(IStateMachine<TState> stateMachine)
+        protected internal override void Link(IStateMachine<TState> stateMachine)
         {
+            base.Link(stateMachine);
+
             if (LinksCount > 1)
             {
                 var message = "Already linked";
@@ -28,8 +30,10 @@ namespace Better.StateMachine.Runtime.Modules
             StateMachine = stateMachine;
         }
 
-        protected override void OnUnlinked(IStateMachine<TState> stateMachine)
+        protected internal override void Unlink(IStateMachine<TState> stateMachine)
         {
+            base.Unlink(stateMachine);
+
             if (StateMachine == stateMachine)
             {
                 StateMachine = null;

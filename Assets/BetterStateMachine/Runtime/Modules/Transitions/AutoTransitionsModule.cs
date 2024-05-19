@@ -24,7 +24,7 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
         {
         }
 
-        public override void OnMachineRunned(IStateMachine<TState> stateMachine)
+        protected internal override void OnMachineRunned(IStateMachine<TState> stateMachine)
         {
             base.OnMachineRunned(stateMachine);
 
@@ -47,17 +47,17 @@ namespace Better.StateMachine.Runtime.Modules.Transitions
             } while (!cancellationToken.IsCancellationRequested);
         }
 
-        public override void OnMachineStopped(IStateMachine<TState> stateMachine)
+        protected internal override void OnMachineStopped(IStateMachine<TState> stateMachine)
         {
             base.OnMachineStopped(stateMachine);
 
             _tokenSource?.Cancel();
         }
 
-        protected override void OnUnlinked(IStateMachine<TState> stateMachine)
+        protected internal override void Unlink(IStateMachine<TState> stateMachine)
         {
-            base.OnUnlinked(stateMachine);
-
+            base.Unlink(stateMachine);
+            
             _tokenSource?.Cancel();
         }
     }

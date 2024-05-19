@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Better.Commons.Runtime.Extensions;
 using Better.Commons.Runtime.Utility;
+using Better.Locators.Runtime;
 using Better.StateMachine.Runtime.Modules;
 using Better.StateMachine.Runtime.Sequences;
 using Better.StateMachine.Runtime.States;
@@ -12,16 +12,18 @@ using UnityEngine;
 namespace Better.StateMachine.Runtime
 {
     [Serializable]
-    public class StateMachine<TState, TTransitionSequence> : IStateMachine<TState> where TState : BaseState
+    public class StateMachine<TState, TTransitionSequence> : IStateMachine<TState>
+        where TState : BaseState
         where TTransitionSequence : ISequence<TState>, new()
     {
         public event Action<TState> StateChanged;
 
+        private readonly TTransitionSequence _transitionSequence;
+        private readonly Locator<Module<TState>> _modulesLocator;
+
         private CancellationTokenSource _runningTokenSource;
         private CancellationTokenSource _transitionTokenSource;
-        private readonly TTransitionSequence _transitionSequence;
         private TaskCompletionSource<bool> _stateChangeCompletionSource;
-        private Dictionary<Type, Module<TState>> _typeModuleMap;
 
         public bool IsRunning { get; protected set; }
         public bool InTransition => _stateChangeCompletionSource != null;
@@ -36,7 +38,7 @@ namespace Better.StateMachine.Runtime
             }
 
             _transitionSequence = transitionSequence;
-            _typeModuleMap = new();
+            _modulesLocator = new();
         }
 
         public StateMachine() : this(new())
@@ -50,7 +52,8 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
-            foreach (var module in _typeModuleMap.Values)
+            var modules = _modulesLocator.GetElements();
+            foreach (var module in modules)
             {
                 if (!module.AllowRunMachine(this))
                 {
@@ -64,7 +67,7 @@ namespace Better.StateMachine.Runtime
             IsRunning = true;
             _runningTokenSource = new CancellationTokenSource();
 
-            foreach (var module in _typeModuleMap.Values)
+            foreach (var module in modules)
             {
                 module.OnMachineRunned(this);
             }
@@ -77,7 +80,8 @@ namespace Better.StateMachine.Runtime
                 return;
             }
 
-            foreach (var module in _typeModuleMap.Values)
+            var modules = _modulesLocator.GetElements();
+            foreach (var module in modules)
             {
                 if (!module.AllowStopMachine(this))
                 {
@@ -91,7 +95,7 @@ namespace Better.StateMachine.Runtime
             IsRunning = false;
             _runningTokenSource?.Cancel();
 
-            foreach (var module in _typeModuleMap.Values)
+            foreach (var module in modules)
             {
                 module.OnMachineStopped(this);
             }
@@ -115,7 +119,8 @@ namespace Better.StateMachine.Runtime
             _transitionTokenSource?.Cancel();
             await TransitionTask;
 
-            foreach (var module in _typeModuleMap.Values)
+            var modules = _modulesLocator.GetElements();
+            foreach (var module in modules)
             {
                 if (!module.AllowChangeState(this, newState))
                 {
@@ -157,7 +162,8 @@ namespace Better.StateMachine.Runtime
 
         protected virtual void OnStatePreChanged(TState state)
         {
-            foreach (var module in _typeModuleMap.Values)
+            var modules = _modulesLocator.GetElements();
+            foreach (var module in modules)
             {
                 module.OnStatePreChanged(this, state);
             }
@@ -165,7 +171,8 @@ namespace Better.StateMachine.Runtime
 
         protected virtual void OnStateChanged(TState state)
         {
-            foreach (var module in _typeModuleMap.Values)
+            var modules = _modulesLocator.GetElements();
+            foreach (var module in modules)
             {
                 module.OnStateChanged(this, state);
             }
@@ -182,7 +189,8 @@ namespace Better.StateMachine.Runtime
 
         #region Modules
 
-        public bool AddModule(Module<TState> module)
+        public bool TryAddModule<TModule>(TModule module)
+            where TModule : Module<TState>
         {
             if (module == null)
             {
@@ -190,56 +198,30 @@ namespace Better.StateMachine.Runtime
                 return false;
             }
 
-            if (!ValidateRunning(false))
+            if (!ValidateRunning(false, false))
             {
-                return false;
-            }
-
-            var type = module.GetType();
-            if (HasModule(type))
-            {
-                var message = $"{nameof(module)} of {nameof(type)}({type}) already added";
-                Debug.LogWarning(message);
                 return false;
             }
 
             if (!module.AllowLinkTo(this))
             {
-                var message = $"{nameof(module)} of {nameof(type)}({type}) not allowed linked";
-                Debug.LogWarning(message);
                 return false;
             }
 
-            _typeModuleMap.Add(type, module);
+            if (HasModule<TModule>() || HasModule(module))
+            {
+                return false;
+            }
+
+            if (!_modulesLocator.TryAdd(module))
+            {
+                var message = $"{nameof(module)}({module}) invalid case";
+                DebugUtility.LogException<InvalidOperationException>(message);
+                return false;
+            }
+
             module.Link(this);
             return true;
-        }
-
-        public TModule AddModule<TModule>()
-            where TModule : Module<TState>, new()
-        {
-            var module = new TModule();
-            AddModule(module);
-
-            return module;
-        }
-
-        public bool HasModule(Type type)
-        {
-            if (type == null)
-            {
-                DebugUtility.LogException<ArgumentNullException>(nameof(type));
-                return false;
-            }
-
-            return _typeModuleMap.ContainsKey(type);
-        }
-
-        public bool HasModule<TModule>()
-            where TModule : Module<TState>
-        {
-            var type = typeof(TModule);
-            return HasModule(type);
         }
 
         public bool HasModule(Module<TState> module)
@@ -250,78 +232,19 @@ namespace Better.StateMachine.Runtime
                 return false;
             }
 
-            return _typeModuleMap.ContainsValue(module);
+            return _modulesLocator.ContainsElement(module);
         }
 
-        public bool TryGetModule(Type type, out Module<TState> module)
+        public bool HasModule<TModule>()
+            where TModule : Module<TState>
         {
-            if (type == null)
-            {
-                DebugUtility.LogException<ArgumentNullException>(nameof(type));
-
-                module = default;
-                return false;
-            }
-
-            return _typeModuleMap.TryGetValue(type, out module);
+            return _modulesLocator.ContainsKey<Module<TState>, TModule>();
         }
 
         public bool TryGetModule<TModule>(out TModule module)
             where TModule : Module<TState>
         {
-            var type = typeof(TModule);
-            if (TryGetModule(type, out var mappedModule)
-                && mappedModule is TModule castedModule)
-            {
-                module = castedModule;
-                return true;
-            }
-
-            module = null;
-            return false;
-        }
-
-        public Module<TState> GetModule(Type type)
-        {
-            if (type == null)
-            {
-                DebugUtility.LogException<ArgumentNullException>(nameof(type));
-                return null;
-            }
-
-            if (TryGetModule(type, out var module))
-            {
-                return module;
-            }
-
-            var message = $"Not found of {nameof(type)}({type})";
-            DebugUtility.LogException<InvalidOperationException>(message);
-            return null;
-        }
-
-        public TModule GetModule<TModule>()
-            where TModule : Module<TState>
-        {
-            if (TryGetModule<TModule>(out var module))
-            {
-                return module;
-            }
-
-            var type = typeof(TModule);
-            var message = $"Not found {nameof(type)}({type})";
-            DebugUtility.LogException<InvalidOperationException>(message);
-            return null;
-        }
-
-        public TModule GetOrAddModule<TModule>()
-            where TModule : Module<TState>, new()
-        {
-            if (TryGetModule<TModule>(out var module))
-            {
-                return module;
-            }
-
-            return AddModule<TModule>();
+            return _modulesLocator.TryGet(out module);
         }
 
         public bool RemoveModule(Module<TState> module)
@@ -332,31 +255,13 @@ namespace Better.StateMachine.Runtime
                 return false;
             }
 
-            var type = module.GetType();
-            if (_typeModuleMap.Remove(type))
+            var removed = _modulesLocator.Remove(module);
+            if (removed)
             {
                 module.Unlink(this);
-                return true;
             }
 
-            return false;
-        }
-
-        public bool RemoveModule(Type type)
-        {
-            if (type == null)
-            {
-                DebugUtility.LogException<ArgumentNullException>(nameof(type));
-                return false;
-            }
-
-            return TryGetModule(type, out var module) && RemoveModule(module);
-        }
-
-        public bool RemoveModule<TModule>()
-            where TModule : Module<TState>
-        {
-            return TryGetModule<TModule>(out var module) && RemoveModule(module);
+            return removed;
         }
 
         #endregion
@@ -380,6 +285,18 @@ namespace Better.StateMachine.Runtime
         where TState : BaseState
     {
         public StateMachine(DefaultSequence<TState> transitionSequence) : base(transitionSequence)
+        {
+        }
+
+        public StateMachine() : this(new())
+        {
+        }
+    }
+
+    [Serializable]
+    public class StateMachine : StateMachine<BaseState>
+    {
+        public StateMachine(DefaultSequence<BaseState> transitionSequence) : base(transitionSequence)
         {
         }
 
