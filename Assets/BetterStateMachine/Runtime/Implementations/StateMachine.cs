@@ -12,13 +12,13 @@ using UnityEngine;
 namespace Better.StateMachine.Runtime
 {
     [Serializable]
-    public class StateMachine<TState, TTransitionSequence> : IStateMachine<TState>
+    public class StateMachine<TState, TSequence> : IStateMachine<TState>
         where TState : BaseState
-        where TTransitionSequence : ISequence<TState>, new()
+        where TSequence : Sequence<TState>, new()
     {
         public event Action<TState> StateChanged;
 
-        private readonly TTransitionSequence _transitionSequence;
+        private readonly TSequence _sequence;
         private readonly Locator<Module<TState>> _modulesLocator;
 
         private CancellationTokenSource _runningTokenSource;
@@ -30,14 +30,14 @@ namespace Better.StateMachine.Runtime
         public Task TransitionTask => InTransition ? _stateChangeCompletionSource.Task : Task.CompletedTask;
         public TState CurrentState { get; protected set; }
 
-        public StateMachine(TTransitionSequence transitionSequence)
+        public StateMachine(TSequence sequence)
         {
-            if (transitionSequence == null)
+            if (sequence == null)
             {
-                throw new ArgumentNullException(nameof(transitionSequence));
+                throw new ArgumentNullException(nameof(sequence));
             }
 
-            _transitionSequence = transitionSequence;
+            _sequence = sequence;
             _modulesLocator = new();
         }
 
@@ -103,16 +103,16 @@ namespace Better.StateMachine.Runtime
 
         #region States
 
-        public async Task ChangeStateAsync(TState newState, CancellationToken cancellationToken)
+        public async Task ChangeStateAsync(TState state, CancellationToken cancellationToken)
         {
             if (!ValidateRunning(true))
             {
                 return;
             }
 
-            if (newState == null)
+            if (state == null)
             {
-                DebugUtility.LogException<ArgumentNullException>(nameof(newState));
+                DebugUtility.LogException<ArgumentNullException>(nameof(state));
                 return;
             }
 
@@ -122,9 +122,9 @@ namespace Better.StateMachine.Runtime
             var modules = _modulesLocator.GetElements();
             foreach (var module in modules)
             {
-                if (!module.AllowChangeState(this, newState))
+                if (!module.AllowChangeState(this, state))
                 {
-                    var message = $"{module} not allow change state to {newState}";
+                    var message = $"{module} not allow change state to {state}";
                     Debug.LogWarning(message);
 
                     return;
@@ -133,10 +133,18 @@ namespace Better.StateMachine.Runtime
 
             _transitionTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_runningTokenSource.Token, cancellationToken);
             _stateChangeCompletionSource = new TaskCompletionSource<bool>();
+            var rootState = CurrentState;
 
-            OnStatePreChanged(newState);
-            CurrentState = await _transitionSequence.ChangingStateAsync(CurrentState, newState, _transitionTokenSource.Token);
-            OnStateChanged(CurrentState);
+            OnStatePreChanged(state);
+            await _sequence.PreProcessingAsync(rootState, state, cancellationToken);
+
+            if (!cancellationToken.IsCancellationRequested
+                && await _sequence.ProcessingAsync(rootState, state, cancellationToken))
+            {
+                CurrentState = state;
+                await _sequence.PostProcessingAsync(rootState, state, cancellationToken);
+                OnStateChanged(CurrentState);
+            }
 
             _stateChangeCompletionSource.TrySetResult(true);
             _stateChangeCompletionSource = null;
@@ -284,7 +292,7 @@ namespace Better.StateMachine.Runtime
     public class StateMachine<TState> : StateMachine<TState, DefaultSequence<TState>>
         where TState : BaseState
     {
-        public StateMachine(DefaultSequence<TState> transitionSequence) : base(transitionSequence)
+        public StateMachine(DefaultSequence<TState> sequence) : base(sequence)
         {
         }
 
@@ -296,7 +304,7 @@ namespace Better.StateMachine.Runtime
     [Serializable]
     public class StateMachine : StateMachine<BaseState>
     {
-        public StateMachine(DefaultSequence<BaseState> transitionSequence) : base(transitionSequence)
+        public StateMachine(DefaultSequence<BaseState> sequence) : base(sequence)
         {
         }
 
