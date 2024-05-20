@@ -17,7 +17,7 @@ namespace Better.StateMachine.Runtime
 
         void Run();
         bool InState<T>() where T : TState;
-        Task ChangeStateAsync(TState newState, CancellationToken cancellationToken = default);
+        Task ChangeStateAsync(TState state, CancellationToken cancellationToken = default);
         void Stop();
 
         public bool TryAddModule<TModule>(TModule module) where TModule : Module<TState>;

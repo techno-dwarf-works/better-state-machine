@@ -7,35 +7,43 @@ using UnityEngine;
 namespace Better.StateMachine.Runtime.Sequences
 {
     [Serializable]
-    public class DefaultSequence<TState> : ISequence<TState> where TState : BaseState
+    public class DefaultSequence<TState> : Sequence<TState> where TState : BaseState
     {
-        async Task<TState> ISequence<TState>.ChangingStateAsync(TState currentState, TState newState, CancellationToken cancellationToken)
+        protected internal override Task PreProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected internal override async Task<bool> ProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                Debug.LogWarning("Was canceled before the start");
-                return default;
+                var message = "Was canceled before the start";
+                Debug.LogWarning(message);
+                return false;
             }
 
-            if (newState == currentState)
+            if (fromState != null)
             {
-                Debug.LogWarning($"{nameof(newState)} equaled {nameof(currentState)}, operation was cancelled");
-                return currentState;
-            }
-
-            if (currentState != null)
-            {
-                await currentState.ExitAsync(cancellationToken);
+                await fromState.ExitAsync(cancellationToken);
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    return default;
+                    return false;
                 }
             }
 
-            await newState.EnterAsync(cancellationToken);
-            if (cancellationToken.IsCancellationRequested) return default;
+            await toState.EnterAsync(cancellationToken);
 
-            return newState;
+            var success = !cancellationToken.IsCancellationRequested;
+            return success;
+        }
+
+        protected internal override Task PostProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
+        {
+            fromState?.OnExited();
+            toState?.OnEntered();
+
+            return Task.CompletedTask;
         }
     }
 }
