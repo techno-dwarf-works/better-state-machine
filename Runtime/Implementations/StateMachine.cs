@@ -119,6 +119,11 @@ namespace Better.StateMachine.Runtime
             _transitionTokenSource?.Cancel();
             await TransitionTask;
 
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             var modules = _modulesLocator.GetElements();
             foreach (var module in modules)
             {
@@ -136,18 +141,18 @@ namespace Better.StateMachine.Runtime
             var rootState = CurrentState;
 
             OnStatePreChanged(state);
-            await _sequence.PreProcessingAsync(rootState, state, cancellationToken);
+            _sequence.OnPreProcessing(rootState, state);
 
-            if (!cancellationToken.IsCancellationRequested
-                && await _sequence.ProcessingAsync(rootState, state, cancellationToken))
-            {
-                CurrentState = state;
-                await _sequence.PostProcessingAsync(rootState, state, cancellationToken);
-                OnStateChanged(CurrentState);
-            }
-
+            var sequenceResult = await _sequence.ProcessingAsync(rootState, state, cancellationToken);
             _stateChangeCompletionSource.TrySetResult(true);
             _stateChangeCompletionSource = null;
+
+            if (sequenceResult && !cancellationToken.IsCancellationRequested)
+            {
+                CurrentState = state;
+                _sequence.OnPostProcessing(rootState, state);
+                OnStateChanged(CurrentState);
+            }
         }
 
         public Task ChangeStateAsync<T>(CancellationToken cancellationToken)

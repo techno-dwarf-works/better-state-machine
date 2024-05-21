@@ -9,9 +9,8 @@ namespace Better.StateMachine.Runtime.Sequences
     [Serializable]
     public class DefaultSequence<TState> : Sequence<TState> where TState : BaseState
     {
-        protected internal override Task PreProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
+        protected internal override void OnPreProcessing(TState fromState, TState toState)
         {
-            return Task.CompletedTask;
         }
 
         protected internal override async Task<bool> ProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
@@ -38,12 +37,10 @@ namespace Better.StateMachine.Runtime.Sequences
             return success;
         }
 
-        protected internal override Task PostProcessingAsync(TState fromState, TState toState, CancellationToken cancellationToken)
+        protected internal override void OnPostProcessing(TState fromState, TState toState)
         {
             fromState?.OnExited();
-            toState?.OnEntered();
-
-            return Task.CompletedTask;
+            toState.OnEntered();
         }
     }
 }
