@@ -16,9 +16,13 @@ namespace Better.StateMachine.Runtime.Modules
         public int MaxDepth { get; private set; }
         public bool IsLocked { get; private set; }
 
-        public StackOverflowModule(int overflowDepth = DefaultOverflowDepth)
+        public StackOverflowModule(int overflowDepth)
         {
             OverflowDepth = overflowDepth;
+        }
+
+        public StackOverflowModule() : this(DefaultOverflowDepth)
+        {
         }
 
         protected void Lock()
@@ -43,7 +47,7 @@ namespace Better.StateMachine.Runtime.Modules
 
             Depth++;
             MaxDepth = Mathf.Max(MaxDepth, Depth);
-            
+
             if (Depth >= OverflowDepth)
             {
                 Lock();
