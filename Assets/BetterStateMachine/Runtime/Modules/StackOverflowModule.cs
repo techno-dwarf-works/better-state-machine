@@ -38,7 +38,17 @@ namespace Better.StateMachine.Runtime.Modules
 
         protected internal override bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
         {
-            return base.AllowChangeState(stateMachine, state) && !IsLocked;
+            if (!base.AllowChangeState(stateMachine, state))
+            {
+                return false;
+            }
+
+            if (Depth >= OverflowDepth)
+            {
+                Lock();
+            }
+
+            return !IsLocked;
         }
 
         protected internal override void OnStatePreChanged(IStateMachine<TState> stateMachine, TState state)
@@ -47,11 +57,6 @@ namespace Better.StateMachine.Runtime.Modules
 
             Depth++;
             MaxDepth = Mathf.Max(MaxDepth, Depth);
-
-            if (Depth >= OverflowDepth)
-            {
-                Lock();
-            }
         }
 
         protected internal override void OnStateChanged(IStateMachine<TState> stateMachine, TState state)
@@ -65,9 +70,7 @@ namespace Better.StateMachine.Runtime.Modules
         {
             base.OnMachineStopped(stateMachine);
 
-            Depth = 0;
-            MaxDepth = 0;
-            IsLocked = false;
+            Unlock();
         }
     }
 }
