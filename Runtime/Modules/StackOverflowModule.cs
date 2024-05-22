@@ -34,6 +34,7 @@ namespace Better.StateMachine.Runtime.Modules
         public void Unlock()
         {
             IsLocked = false;
+            Depth = 0;
         }
 
         protected internal override bool AllowChangeState(IStateMachine<TState> stateMachine, TState state)
