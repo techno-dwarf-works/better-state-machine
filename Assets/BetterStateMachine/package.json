@@ -1,7 +1,7 @@
 {
   "name": "com.tdw.better.statemachine",
   "displayName": "Better State Machine",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "unity": "2021.3",
   "description": " ",
   "dependencies": {
