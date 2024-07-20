@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "com.tdw.better.commons": "0.0.5",
-    "com.tdw.better.conditions": "0.0.2",
-    "com.tdw.better.locators": "0.1.8",
+    "com.tdw.better.commons": "0.0.22",
+    "com.tdw.better.conditions": "0.0.3",
+    "com.tdw.better.locators": "0.1.12",
     "com.unity.collab-proxy": "2.0.1",
     "com.unity.feature.development": "1.0.1",
     "com.unity.ide.rider": "3.0.18",
