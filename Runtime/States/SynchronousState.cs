@@ -17,7 +17,7 @@ namespace Better.StateMachine.Runtime.States
             return Task.CompletedTask;
         }
 
-        public abstract void Enter();
+        protected abstract void Enter();
 
         public sealed override Task ExitAsync(CancellationToken token)
         {
@@ -29,6 +29,6 @@ namespace Better.StateMachine.Runtime.States
             return Task.CompletedTask;
         }
 
-        public abstract void Exit();
+        protected abstract void Exit();
     }
 }
