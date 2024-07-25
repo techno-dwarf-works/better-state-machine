@@ -34,6 +34,11 @@ namespace Better.StateMachine.Runtime.Modules
                 return;
             }
 
+            if (_stateLocator.ContainsElement(state))
+            {
+                return;
+            }
+            
             var type = state.GetType();
             _stateLocator.Remove(type);
             _stateLocator.Add(type, state);
