@@ -1,14 +1,14 @@
 {
   "name": "com.tdw.better.statemachine",
   "displayName": "Better State Machine",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "unity": "2021.3",
   "description": " ",
   "dependencies": {
     "com.tdw.better.internal.core": "0.0.2",
-    "com.tdw.better.commons": "0.0.26",
+    "com.tdw.better.commons": "0.0.44",
     "com.tdw.better.locators": "0.1.12",
-    "com.tdw.better.conditions": "0.0.3"
+    "com.tdw.better.conditions": "0.0.4"
   },
   "author": {
     "name": "Better Plugins",
